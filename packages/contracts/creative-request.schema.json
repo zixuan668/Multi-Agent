@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zhice.example/contracts/creative-request.schema.json",
+  "title": "智策营销创意首轮交付请求",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "task_id", "agent", "round_no", "attempt_count", "requirements", "strategy", "creative", "feedback", "previous_result", "config_version"],
+  "properties": {
+    "schema_version": {"const": "1.0"}, "task_id": {"type": "string", "minLength": 1}, "agent": {"const": "creative"},
+    "round_no": {"const": 1}, "attempt_count": {"const": 1},
+    "requirements": {"$ref": "strategy-request.schema.json#/properties/requirements"},
+    "strategy": {"allOf": [{"$ref": "strategy-response.schema.json"}, {"properties": {"status": {"const": "succeeded"}}}]},
+    "creative": {"type": "null"}, "feedback": {"type": "array", "maxItems": 0}, "previous_result": {"type": "null"},
+    "config_version": {"type": "string", "minLength": 1}
+  },
+  "$comment": "跨任务引用、预算合计和卖点原文依据由 downstream.validate_creative_request 再校验。仅覆盖 AC-008 首轮交付，不实现完整创意模块。"
+}

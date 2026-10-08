@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="智策营销策略智能体" />
+    <title>智策营销策略智能体</title>
+    <link rel="stylesheet" href="/styles.css?v=20261008-neumorphism1" />
+  </head>
+  <body>
+    <div class="app-shell">
+    <div class="main-area" id="workspaceTop">
+    <header class="topbar">
+      <a class="workspace-home-link" href="/" aria-label="返回智策营销首页">
+        <span class="workspace-brand-mark">策</span>
+        <span><strong>智策营销</strong><small>营销策略智能体</small></span>
+      </a>
+      <nav class="workspace-navigation" aria-label="工作台导航">
+        <a href="#requirementsPanel" class="current">填写需求</a>
+        <a href="#resultPanel">策略方案</a>
+        <a href="/">返回首页</a>
+      </nav>
+      <div id="modelBadge" class="mode-badge">正在检查模型…</div>
+    </header>
+
+    <section class="workspace-intro">
+      <div>
+        <p class="eyebrow">智策营销 / 策略工作空间</p>
+        <h1>把产品信息，<br />变成<span>营销方向。</span></h1>
+        <p class="intro-description">写下你的产品与目标，<br />让每一份策略都有依据、有选择、能执行。</p>
+      </div>
+      <div class="workspace-stamp">
+        <div class="stamp-inset"><span>从事实出发</span><strong>好策略，始于好问题。</strong><p>产品特点 · 用户目标 · 资源约束</p></div>
+        <div class="stamp-actions"><a href="#requirementsPanel">填写需求 <span aria-hidden="true">↗</span></a><a href="#resultPanel">查看策略 <span aria-hidden="true">→</span></a></div>
+        <p class="stamp-caption">填写需求 → 生成策略 → 交付创意</p>
+      </div>
+    </section>
+
+    <main class="workspace">
+      <section id="requirementsPanel" class="panel input-panel">
+        <div class="panel-heading">
+          <div>
+            <p class="step">01 输入营销需求</p>
+            <h2>营销需求</h2>
+          </div>
+          <div class="draft-actions">
+            <span id="draftStatus" class="draft-status">草稿会保存在此浏览器</span>
+            <button id="saveDraft" class="text-button" type="button">保存草稿</button>
+            <button id="clearDraft" class="text-button" type="button">清空草稿</button>
+            <button id="toggleTemplates" class="text-button" type="button" aria-expanded="false">示例模板</button>
+          </div>
+        </div>
+        <div class="input-guide">
+          <p>填写真实产品信息。预算或周期暂不确定，可留空，智能体会明确标注信息缺口。</p>
+          <div class="completion"><span id="completionText">必填项 0/3</span><div><i id="completionBar"></i></div></div>
+        </div>
+
+        <form id="strategyForm" class="brief-form wizard-mode" novalidate>
+          <div class="form-commandbar">
+            <div class="view-switch" role="group" aria-label="录入模式">
+              <button type="button" class="active" data-form-mode="wizard">分步向导</button>
+              <button type="button" data-form-mode="single">完整表单</button>
+            </div>
+            <div id="wizardProgress" class="wizard-progress" aria-label="录入步骤"></div>
+          </div>
+
+          <section id="templatePanel" class="template-panel hidden" aria-label="示例模板">
+            <div><strong>从一个真实场景开始</strong><span>模板只填入需求，不预设策略结论。</span></div>
+            <div id="templateList" class="template-list"></div>
+          </section>
+
+          <section class="form-section" data-step="0">
+            <div class="section-heading"><span>01</span><div><h3>产品事实</h3><p>只写已经确认的信息，卖点会从这里引用。</p></div></div>
+            <div class="section-fields">
+              <label class="field-product">
+                产品或服务名称 <span class="required">必填</span>
+                <input id="productName" maxlength="100" required placeholder="例如：原味奶茶" aria-describedby="productNameError" />
+                <small class="field-meta"><span id="productNameError"></span><span data-counter="productName">0/100</span></small>
+              </label>
+              <label class="field-description">
+                产品介绍 <span class="required">必填</span>
+                <textarea id="productDescription" maxlength="5000" required placeholder="功能、特点、服务范围、可选规格等真实信息" aria-describedby="productDescriptionError"></textarea>
+                <small class="field-meta"><span id="productDescriptionError"></span><span data-counter="productDescription">0/5000</span></small>
+              </label>
+            </div>
+          </section>
+
+          <section class="form-section" data-step="1">
+            <div class="section-heading"><span>02</span><div><h3>目标与人群</h3><p>说明希望改变什么，以及最想影响谁。</p></div></div>
+            <div class="section-fields">
+              <label class="field-goal">
+                营销目标 <span class="required">必填</span>
+                <textarea id="marketingGoal" maxlength="500" required placeholder="例如：让附近大学生了解门店产品" aria-describedby="marketingGoalError"></textarea>
+                <small class="field-meta"><span id="marketingGoalError"></span><span data-counter="marketingGoal">0/500</span></small>
+              </label>
+              <div class="quick-options goal-options" aria-label="目标快捷选择">
+                <button type="button" data-goal="提升目标人群对产品的认知">提升认知</button>
+                <button type="button" data-goal="获取有明确兴趣的潜在客户">获取线索</button>
+                <button type="button" data-goal="推动目标人群完成咨询或购买转化">促进转化</button>
+              </div>
+              <label class="field-audience">
+                目标用户 <span class="optional">可留空，由智能体提出候选人群</span>
+                <textarea id="targetAudience" maxlength="1000" placeholder="例如：学校周边、关注性价比与口味选择的大学生"></textarea>
+                <small class="field-meta"><span></span><span data-counter="targetAudience">0/1000</span></small>
+              </label>
+            </div>
+          </section>
+
+          <section class="form-section" data-step="2">
+            <div class="section-heading"><span>03</span><div><h3>预算与周期</h3><p>可以留空；智能体不会凭空编造金额或日期。</p></div></div>
+            <div class="section-fields">
+              <label class="field-budget-raw">
+                预算原始表达 <span class="optional">支持“五千块”“1.2万”等</span>
+                <input id="budgetRaw" maxlength="200" placeholder="例如：预算五千元" aria-describedby="budgetError" />
+                <small id="budgetParseHint" class="parse-hint">输入后会安全解析，无法确认时不会猜测。</small>
+              </label>
+              <label class="field-budget">
+                解析金额
+                <input id="budgetAmount" type="number" min="0" max="100000000" step="0.01" placeholder="可直接填写" aria-describedby="budgetError" />
+                <small id="budgetError" class="field-error"></small>
+              </label>
+              <label class="field-currency">
+                币种
+                <select id="currency">
+                  <option value="CNY">CNY 人民币</option>
+                  <option value="USD">USD 美元</option>
+                  <option value="EUR">EUR 欧元</option>
+                </select>
+              </label>
+              <div class="period-mode field-period-mode">
+                <span>推广周期</span>
+                <div class="view-switch" role="group" aria-label="周期填写方式">
+                  <button type="button" class="active" data-period-mode="duration">持续天数</button>
+                  <button type="button" data-period-mode="dates">起止日期</button>
+                </div>
+              </div>
+              <label class="field-duration" data-period-panel="duration">
+                持续天数
+                <input id="durationDays" type="number" min="1" max="365" placeholder="例如：30" aria-describedby="periodError" />
+              </label>
+              <div class="quick-options field-period-quick" data-period-panel="duration">
+                <button type="button" data-days="7">7 天</button><button type="button" data-days="30">30 天</button><button type="button" data-days="90">90 天</button>
+              </div>
+              <label class="field-start hidden" data-period-panel="dates">开始日期<input id="startDate" type="date" /></label>
+              <label class="field-end hidden" data-period-panel="dates">结束日期<input id="endDate" type="date" /></label>
+              <small id="periodError" class="field-error field-period-error"></small>
+            </div>
+          </section>
+
+          <section class="form-section" data-step="3">
+            <div class="section-heading"><span>04</span><div><h3>约束与确认</h3><p>写清品牌口径、必选或禁选渠道、禁用表达。</p></div></div>
+            <div class="section-fields">
+              <label class="field-special">
+                特殊要求
+                <textarea id="specialRequirements" maxlength="2000" placeholder="例如：不虚构优惠；禁止某渠道；必须保留某种表达"></textarea>
+                <small class="field-meta"><span></span><span data-counter="specialRequirements">0/2000</span></small>
+              </label>
+              <div id="briefSummary" class="brief-summary"></div>
+            </div>
+          </section>
+
+          <div class="form-footer">
+            <button id="wizardPrev" class="secondary-button" type="button">← 上一步</button>
+            <p id="formMessage" class="form-message" role="status"></p>
+            <button id="wizardNext" class="secondary-button" type="button">下一步 →</button>
+            <button id="submitButton" class="primary-button hidden" type="submit"><span>生成营销策略</span><span aria-hidden="true">→</span></button>
+          </div>
+        </form>
+        <section id="recentTasks" class="recent-tasks" aria-label="本地结果记录"></section>
+      </section>
+
+      <section id="resultPanel" class="panel result-panel" aria-live="polite">
+        <div class="panel-heading result-heading">
+          <div>
+            <p class="step">02 智能体结果</p>
+            <h2>策略方案</h2>
+          </div>
+          <div>
+            <button id="copyResult" class="text-button" type="button" disabled>复制策略全文</button>
+            <button id="exportStrategy" class="text-button" type="button" disabled>导出策略 JSON</button>
+            <button id="exportResult" class="text-button" type="button" disabled>导出任务记录</button>
+            <button id="exportCreative" class="text-button" type="button" disabled>交付创意请求</button>
+          </div>
+        </div>
+        <ol id="workflow" class="workflow" aria-label="策略执行步骤">
+          <li data-stage="generating"><span>01</span>需求分析与生成</li>
+          <li data-stage="validating"><span>02</span>结构与约束校验</li>
+          <li data-stage="reviewing"><span>03</span>策略编辑与复核</li>
+          <li data-stage="completed"><span>04</span>策略交付</li>
+        </ol>
+        <section id="failureState" class="failure-state hidden" role="status">
+          <p class="card-label">本次任务未完成 · 未交付下游</p>
+          <h3 id="failureTitle"></h3>
+          <p id="failureAdvice"></p>
+          <button id="resumeTask" class="text-button hidden" type="button">恢复查询（不会重新调用模型）</button>
+          <button id="retryTask" class="text-button" type="button">保留需求，重新生成</button>
+        </section>
+        <section id="reviewNotes" class="review-notes hidden">
+          <strong>完善建议 · 不代表评估通过</strong>
+          <ul id="reviewNotesList"></ul>
+        </section>
+        <details id="diagnostics" class="diagnostics hidden">
+          <summary>
+            <span class="diagnostics-heading">校验与自动修复记录<small id="diagnosticSummary"></small></span>
+            <span class="diagnostics-toggle" aria-hidden="true"></span>
+          </summary>
+          <div class="diagnostics-body">
+            <p id="diagnosticConclusion" class="diagnostic-conclusion"></p>
+            <div id="diagnosticItems" class="diagnostic-timeline"></div>
+          </div>
+        </details>
+
+        <div id="emptyState" class="empty-state">
+          <div class="orb" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M10 5h10l5 5v17H7V5h3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M19 5v6h6M12 16h8M12 21h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+          <h3>你的下一份策略，从这里开始</h3>
+          <p>完成上方需求后，用户画像、产品定位、卖点与渠道方案将在这里呈现。</p>
+        </div>
+
+        <div id="loadingState" class="loading-state hidden">
+          <div class="spinner"></div>
+          <h3 id="loadingTitle">正在分析营销需求</h3>
+          <p id="loadingDescription">正在校验事实、约束与输出结构，请稍候。</p>
+        </div>
+
+        <div id="resultContent" class="result-content hidden">
+          <div class="result-stats" aria-label="当前方案摘要">
+            <div><span>推荐渠道</span><strong id="summaryChannels">—</strong></div>
+            <div><span>建议分配预算</span><strong id="summaryBudget">—</strong></div>
+            <div><span>待补充信息</span><strong id="summaryMissing">—</strong></div>
+          </div>
+          <aside class="compliance-note"><strong>发布前复核</strong><span>请确认产品事实、品牌口径与适用法规；本结果不代表真实投放效果预测。</span></aside>
+          <div class="result-tabs" role="tablist" aria-label="策略内容分组">
+            <button type="button" role="tab" id="tabOverview" aria-selected="true" aria-controls="strategyOverview" data-result-tab="strategyOverview">策略概览</button>
+            <button type="button" role="tab" id="tabActions" aria-selected="false" aria-controls="strategyActions" data-result-tab="strategyActions" tabindex="-1">卖点与渠道</button>
+            <button type="button" role="tab" id="tabEvidence" aria-selected="false" aria-controls="strategyEvidence" data-result-tab="strategyEvidence" tabindex="-1">假设与信息缺口</button>
+          </div>
+          <div id="strategyOverview" class="tab-content" role="tabpanel" aria-labelledby="tabOverview">
+          <article class="result-card accent-card">
+            <p class="card-label">产品定位</p>
+            <h3 id="positioning"></h3>
+          </article>
+
+          <div class="result-grid">
+            <article class="result-card">
+              <p class="card-label">目标用户</p>
+              <h3 id="audienceSegment"></h3>
+              <div class="audience-facts"><span>年龄 <strong id="audienceAge">未提供 / 待验证</strong></span><span>职业 <strong id="audienceOccupation">未提供 / 待验证</strong></span></div>
+              <p id="audienceBasis" class="muted"></p>
+              <div class="mini-section">
+                <strong>需求</strong>
+                <ul id="audienceNeeds"></ul>
+              </div>
+              <div class="mini-section">
+                <strong>痛点</strong>
+                <ul id="audiencePainPoints"></ul>
+              </div>
+            </article>
+
+            <article class="result-card">
+              <p class="card-label">营销主题</p>
+              <h3 id="strategyTheme"></h3>
+              <div class="mini-section">
+                <strong>内容方向</strong>
+                <ul id="contentDirections"></ul>
+              </div>
+              <div class="mini-section">
+                <strong>推广方式</strong>
+                <ul id="promotionMethods"></ul>
+              </div>
+            </article>
+          </div>
+
+          </div>
+          <div id="strategyActions" class="tab-content hidden" role="tabpanel" aria-labelledby="tabActions">
+          <article class="result-card">
+            <div class="card-title-row"><p class="card-label">核心卖点与原文依据</p><button type="button" class="module-copy" data-copy-module="selling">复制卖点</button></div>
+            <div id="sellingPoints" class="item-list"></div>
+          </article>
+
+          <article class="result-card">
+            <div class="card-title-row"><p class="card-label">推荐渠道</p><button type="button" class="module-copy" data-copy-module="channels">复制渠道</button></div>
+            <div id="budgetSummary" class="budget-summary hidden"></div>
+            <div id="channels" class="item-list"></div>
+          </article>
+          </div>
+          <div id="strategyEvidence" class="tab-content hidden" role="tabpanel" aria-labelledby="tabEvidence">
+          <div class="result-grid notes-grid">
+            <article class="result-card note-card">
+              <p class="card-label">待验证假设</p>
+              <ul id="assumptions"></ul>
+            </article>
+            <article class="result-card note-card">
+              <p class="card-label">信息缺口</p>
+              <ul id="missingInformation"></ul>
+            </article>
+          </div>
+
+          <article id="conflictCard" class="result-card danger-card hidden">
+            <p class="card-label">约束冲突</p>
+            <ul id="constraintConflicts"></ul>
+          </article>
+          </div>
+          <details class="raw-result">
+            <summary>查看完整 JSON 与调用信息</summary>
+            <pre id="rawJson"></pre>
+          </details>
+        </div>
+      </section>
+    </main>
+
+    </div>
+    </div>
+    <script src="/app.js?v=20261008-neumorphism1" defer></script>
+  </body>
+</html>

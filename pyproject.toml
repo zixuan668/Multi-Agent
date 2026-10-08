@@ -1,0 +1,8 @@
+[project]
+name = "zhice-marketing-strategy-agent"
+version = "0.2.0"
+description = "智策营销系统营销策略智能体"
+requires-python = ">=3.11"
+
+[tool.unittest]
+start-directory = "tests"

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zhice.example/contracts/strategy-response.schema.json",
+  "title": "智策营销策略智能体响应",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "agent", "round_no", "attempt_count", "status", "result_id", "version", "data", "error", "created_at"],
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 1000, "pattern": "\\S"},
+    "texts": {"type": "array", "maxItems": 10, "items": {"$ref": "#/$defs/text"}},
+    "nonemptyTexts": {"allOf": [{"$ref": "#/$defs/texts"}, {"minItems": 1}]},
+    "strategyData": {
+      "type": "object", "additionalProperties": false,
+      "required": ["target_audience", "positioning", "selling_points", "channels", "marketing_strategy", "assumptions", "missing_information", "constraint_conflicts"],
+      "properties": {
+        "target_audience": {
+          "type": "object", "additionalProperties": false,
+          "required": ["segment", "needs", "pain_points", "age_range", "occupation", "basis"],
+          "properties": {
+            "segment": {"$ref": "#/$defs/text"}, "basis": {"$ref": "#/$defs/text"},
+            "needs": {"$ref": "#/$defs/nonemptyTexts"}, "pain_points": {"$ref": "#/$defs/nonemptyTexts"},
+            "age_range": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/text"}]},
+            "occupation": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/text"}]}
+          }
+        },
+        "positioning": {"type": "string", "minLength": 1, "maxLength": 500, "pattern": "\\S"},
+        "selling_points": {
+          "type": "array", "minItems": 1, "maxItems": 5,
+          "items": {"type": "object", "additionalProperties": false, "required": ["claim", "source_quote"], "properties": {"claim": {"$ref": "#/$defs/text"}, "source_quote": {"$ref": "#/$defs/text"}}}
+        },
+        "channels": {
+          "type": "array", "minItems": 1, "maxItems": 5,
+          "items": {"type": "object", "additionalProperties": false, "required": ["name", "reason", "content_direction", "allocated_amount"], "properties": {"name": {"$ref": "#/$defs/text"}, "reason": {"$ref": "#/$defs/text"}, "content_direction": {"$ref": "#/$defs/text"}, "allocated_amount": {"type": ["number", "null"], "minimum": 0}}}
+        },
+        "marketing_strategy": {
+          "type": "object", "additionalProperties": false, "required": ["theme", "content_directions", "promotion_methods"],
+          "properties": {"theme": {"$ref": "#/$defs/text"}, "content_directions": {"$ref": "#/$defs/nonemptyTexts"}, "promotion_methods": {"$ref": "#/$defs/nonemptyTexts"}}
+        },
+        "assumptions": {"$ref": "#/$defs/texts"}, "missing_information": {"$ref": "#/$defs/texts"}, "constraint_conflicts": {"$ref": "#/$defs/texts"}
+      }
+    }
+  },
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "task_id": {"type": "string", "minLength": 1},
+    "agent": {"const": "strategy"},
+    "round_no": {"type": "integer", "minimum": 1, "maximum": 3},
+    "attempt_count": {"type": "integer", "minimum": 1, "maximum": 3},
+    "status": {"enum": ["succeeded", "failed"]},
+    "result_id": {"type": ["string", "null"], "minLength": 1},
+    "version": {"type": ["integer", "null"], "minimum": 1},
+    "data": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/strategyData"}]},
+    "error": {"type": ["object", "null"], "additionalProperties": false, "required": ["code", "message", "field", "retryable"], "properties": {"code": {"$ref": "#/$defs/text"}, "message": {"type": "string", "minLength": 1}, "field": {"type": ["string", "null"]}, "retryable": {"type": "boolean"}}},
+    "created_at": {"type": "string", "format": "date-time", "pattern": "(Z|[+-][0-9]{2}:[0-9]{2})$"}
+  },
+  "allOf": [{"if": {"properties": {"status": {"const": "succeeded"}}}, "then": {"properties": {"result_id": {"type": "string"}, "version": {"type": "integer"}, "data": {"$ref": "#/$defs/strategyData"}, "error": {"type": "null"}}}, "else": {"properties": {"result_id": {"type": "null"}, "version": {"type": "null"}, "data": {"type": "null"}, "error": {"type": "object"}}}}]
+}

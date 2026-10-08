@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Local outputs and development caches are not source code.
+artifacts/
+.pytest_cache/
+.ruff_cache/
+node_modules/
+dist/
+build/

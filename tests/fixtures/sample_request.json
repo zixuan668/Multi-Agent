@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0",
+  "task_id": "demo-001",
+  "agent": "strategy",
+  "round_no": 1,
+  "attempt_count": 1,
+  "requirements": {
+    "product_name": "原味奶茶",
+    "product_description": "提供热饮和冷饮，可选择无糖或半糖。",
+    "marketing_goal": "让附近大学生了解门店产品",
+    "target_audience": "附近大学生",
+    "budget": null,
+    "campaign_period": null,
+    "special_requirements": "不虚构优惠，不承诺减肥效果",
+    "budget_raw": null
+  },
+  "strategy": null,
+  "creative": null,
+  "feedback": [],
+  "previous_result": null,
+  "config_version": "config-v1"
+}

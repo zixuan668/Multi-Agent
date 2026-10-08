@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="智策营销智能体：从真实产品信息出发，生成可执行、可追溯、可交付的营销策略。" />
+    <title>智策营销智能体</title>
+    <link rel="stylesheet" href="/home.css?v=20261003-hero2" />
+  </head>
+  <body>
+    <canvas id="networkCanvas" aria-hidden="true"></canvas>
+    <div id="pointerGlow" class="pointer-glow" aria-hidden="true"></div>
+    <div class="ambient ambient-left" aria-hidden="true"></div>
+    <div class="ambient ambient-right" aria-hidden="true"></div>
+    <div class="aurora aurora-violet" aria-hidden="true"></div>
+    <div class="aurora aurora-rose" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="智策营销首页">
+        <span class="brand-symbol"><i></i><i></i><i></i></span>
+        <span><strong>智策营销</strong><small>ZHICE MARKETING AI</small></span>
+      </a>
+      <nav aria-label="主页导航">
+        <a href="#about">产品简介</a>
+        <a href="#workflow">工作方式</a>
+        <a href="#capabilities">核心能力</a>
+      </nav>
+      <a class="header-entry" href="/workspace">进入工作台 <span>↗</span></a>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="heroTitle">
+        <div class="hero-orbit orbit-one" aria-hidden="true"></div>
+        <div class="hero-orbit orbit-two" aria-hidden="true"></div>
+        <div class="signal-card signal-left" aria-hidden="true">
+          <span>INPUT SIGNAL</span>
+          <strong>产品事实已接入</strong>
+          <i><b></b></i>
+        </div>
+        <div class="signal-card signal-right" aria-hidden="true">
+          <span>STRATEGY ENGINE</span>
+          <strong id="strategySignal">正在识别关键卖点</strong>
+          <i><b></b></i>
+        </div>
+        <div class="hero-content">
+          <h1 id="heroTitle" class="reveal" aria-label="让每一条产品信息变成有依据的营销策略">
+            让每一条产品信息<br />
+            <span class="gradient-text">变成有依据的<span class="mobile-break"><br /></span>营销策略</span>
+          </h1>
+          <p class="hero-description reveal">
+            智策营销智能体理解产品、受众与约束，完成策略草案、策略编辑和事实复核，<br class="desktop-break" />
+            输出能执行、能追溯，也能直接交给创意智能体继续发展的营销方向。
+          </p>
+          <div class="capability-pills reveal" aria-label="核心特性">
+            <span class="violet">策略取舍</span>
+            <span class="rose">事实溯源</span>
+            <span class="amber">预算与渠道</span>
+            <span class="cyan">创意接续</span>
+          </div>
+          <div class="hero-actions reveal">
+            <a class="primary-cta" href="/workspace">
+              <span class="button-icon">✦</span>
+              开始生成营销策略
+              <span class="arrow">→</span>
+            </a>
+            <a class="secondary-cta" href="#workflow"><span>⌄</span> 了解工作方式</a>
+          </div>
+        </div>
+        <a class="scroll-cue" href="#about" aria-label="向下查看产品介绍"><span></span></a>
+      </section>
+
+      <div class="signal-marquee" aria-label="智策营销能力">
+        <div class="marquee-track">
+          <div class="marquee-group">
+            <span>产品事实解析</span><i></i><span>策略方向判断</span><i></i><span>目标受众洞察</span><i></i><span>渠道任务分配</span><i></i><span>预算约束校验</span><i></i><span>创意输入交付</span><i></i>
+          </div>
+          <div class="marquee-group" aria-hidden="true">
+            <span>产品事实解析</span><i></i><span>策略方向判断</span><i></i><span>目标受众洞察</span><i></i><span>渠道任务分配</span><i></i><span>预算约束校验</span><i></i><span>创意输入交付</span><i></i>
+          </div>
+        </div>
+      </div>
+
+      <section id="about" class="section intro-section reveal-section">
+        <div class="section-heading">
+          <p>01 / WHY ZHICE</p>
+          <h2>帮你做出营销选择。</h2>
+        </div>
+        <div class="intro-copy">
+          <p>普通对话给你一份答案。智策营销保留原始需求与卖点证据，先形成策略草案，再由策略编辑阶段删除套话、合并重复方向、明确渠道职责，最后检查事实和约束。</p>
+          <div class="decision-line"><span>输入</span><i></i><span>判断</span><i></i><span>交付</span></div>
+        </div>
+      </section>
+
+      <section id="workflow" class="section workflow-section reveal-section">
+        <div class="section-heading compact">
+          <p>02 / INTELLIGENT WORKFLOW</p>
+          <h2>从需求到可执行策略</h2>
+        </div>
+        <div class="workflow-grid">
+          <article class="flow-card" data-step="01">
+            <span class="card-glow purple"></span>
+            <small>STRATEGY DRAFT</small>
+            <h3>理解需求，形成主方向</h3>
+            <p>从产品事实、目标人群、营销目标、预算与限制中提炼真正需要解决的决策问题。</p>
+          </article>
+          <article class="flow-card" data-step="02">
+            <span class="card-glow pink"></span>
+            <small>EDITORIAL REFINEMENT</small>
+            <h3>策略编辑，做出取舍</h3>
+            <p>删除万能画像和同质建议，建立中心判断、渠道分工、内容母题与执行顺序。</p>
+          </article>
+          <article class="flow-card" data-step="03">
+            <span class="card-glow cyan"></span>
+            <small>VERIFIED DELIVERY</small>
+            <h3>复核事实，交付下游</h3>
+            <p>核对卖点原文、预算和硬约束，保留假设与信息缺口，为创意智能体提供可靠输入。</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="capabilities" class="section capability-section reveal-section">
+        <div class="capability-panel">
+          <div>
+            <p class="section-index">03 / WHAT YOU GET</p>
+            <h2 aria-label="得到的并非JSON，而是能工作的策略。">
+              <span class="capability-title-line">得到的并非JSON，</span>
+              <span class="capability-title-line">而是能工作的策略。</span>
+            </h2>
+          </div>
+          <ul>
+            <li><span>01</span><div><strong>清楚的策略定位</strong><p>明确最该传播什么，以及哪些信息暂时不进入主线。</p></div></li>
+            <li><span>02</span><div><strong>有证据的产品卖点</strong><p>每条核心卖点保留原文依据，事实与规划推断分开。</p></div></li>
+            <li><span>03</span><div><strong>分工明确的渠道方案</strong><p>渠道分别承担发现、解释、咨询或现场决策，而不是简单罗列。</p></div></li>
+            <li><span>04</span><div><strong>可供创意发展的内容母题</strong><p>下游能据此继续发展文案、图文、短视频与传播动作。</p></div></li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="final-cta reveal-section">
+        <p>READY TO BUILD A BETTER STRATEGY?</p>
+        <h2>把真实产品信息交给智策，<br />从一个更清楚的营销决定开始。</h2>
+        <a class="primary-cta" href="/workspace">进入策略工作台 <span class="arrow">→</span></a>
+      </section>
+    </main>
+
+    <footer>
+      <a class="brand footer-brand" href="/"><span class="brand-symbol"><i></i><i></i><i></i></span><span><strong>智策营销</strong><small>ZHICE MARKETING AI</small></span></a>
+      <p>策略智能体 · 第一阶段开发版</p>
+      <p id="homeModelStatus">正在检查智能体状态…</p>
+    </footer>
+    <script src="/home.js?v=20261003-hero2" defer></script>
+  </body>
+</html>
