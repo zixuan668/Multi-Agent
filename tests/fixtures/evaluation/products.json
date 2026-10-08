@@ -1,0 +1,622 @@
+[
+  {
+    "schema_version": "1.0",
+    "task_id": "task_demo_01",
+    "agent": "evaluation",
+    "round_no": 1,
+    "attempt_count": 1,
+    "requirements": {
+      "product_name": "知行 AI 学习助手",
+      "product_description": "提供个性化学习计划、错题归纳和每日复盘提醒。",
+      "marketing_goal": "提升大学生试用申请量并建立学习效率认知。",
+      "target_audience": "准备考试、希望改善学习计划的大学生",
+      "budget": {
+        "amount": 5000.0,
+        "currency": "CNY"
+      },
+      "campaign_period": {
+        "start_date": "2026-10-01",
+        "end_date": "2026-10-31"
+      },
+      "special_requirements": "必选渠道：校园社群；不得承诺实际效果。",
+      "budget_raw": "5000元"
+    },
+    "strategy": {
+      "schema_version": "1.0",
+      "task_id": "task_demo_01",
+      "round_no": 1,
+      "attempt_count": 1,
+      "status": "succeeded",
+      "result_id": "strategy_demo_01",
+      "version": 1,
+      "error": null,
+      "created_at": "2026-09-23T08:00:00Z",
+      "agent": "strategy",
+      "data": {
+        "target_audience": {
+          "segment": "准备考试、希望改善学习计划的大学生",
+          "needs": [
+            "获得清晰、可执行的建议"
+          ],
+          "pain_points": [
+            "信息复杂或难以判断是否适合自己"
+          ],
+          "age_range": null,
+          "occupation": null,
+          "basis": "准备考试、希望改善学习计划的大学生"
+        },
+        "positioning": "围绕“把复杂复习变成每天可完成的一小步”强调产品可验证的功能信息。",
+        "selling_points": [
+          {
+            "claim": "提供个性化学习计划、错题归纳和每日复盘提醒。",
+            "source_quote": "提供个性化学习计划、错题归纳和每日复盘提醒。"
+          }
+        ],
+        "channels": [
+          {
+            "name": "校园社群",
+            "reason": "目标用户集中且便于通过真实学习场景说明产品能力。",
+            "content_direction": "把复杂复习变成每天可完成的一小步",
+            "allocated_amount": 5000.0
+          }
+        ],
+        "marketing_strategy": {
+          "theme": "把复杂复习变成每天可完成的一小步",
+          "content_directions": [
+            "说明真实功能和使用场景"
+          ],
+          "promotion_methods": [
+            "发布产品介绍并邀请用户了解详情"
+          ]
+        },
+        "assumptions": [
+          "具体转化效果需要通过后续真实投放验证。"
+        ],
+        "missing_information": [],
+        "constraint_conflicts": []
+      }
+    },
+    "creative": {
+      "schema_version": "1.0",
+      "task_id": "task_demo_01",
+      "round_no": 1,
+      "attempt_count": 1,
+      "status": "succeeded",
+      "result_id": "creative_demo_01",
+      "version": 1,
+      "error": null,
+      "created_at": "2026-09-23T08:00:00Z",
+      "agent": "creative",
+      "data": {
+        "strategy_result_id": "strategy_demo_01",
+        "items": [
+          {
+            "channel": "校园社群",
+            "copy": "用每日计划、错题归纳和复盘提醒，让复习进度看得见。",
+            "slogan": "今天知道学什么，明天看见进步",
+            "poster_concept": {
+              "headline": "把复杂复习变成每天可完成的一小步",
+              "visual_description": "使用清晰的信息层级展示产品功能和适用场景。"
+            },
+            "video_script": {
+              "duration_seconds": 15,
+              "scenes": [
+                {
+                  "duration_seconds": 5,
+                  "visual": "展示产品或路线的主要信息。",
+                  "narration": "今天知道学什么，明天看见进步"
+                },
+                {
+                  "duration_seconds": 10,
+                  "visual": "展示目标用户的使用场景。",
+                  "narration": "用每日计划、错题归纳和复盘提醒，让复习进度看得见。"
+                }
+              ]
+            }
+          }
+        ],
+        "assumptions": [],
+        "constraint_conflicts": []
+      }
+    },
+    "feedback": [],
+    "previous_result": null,
+    "config_version": "config_demo_v1"
+  },
+  {
+    "schema_version": "1.0",
+    "task_id": "task_demo_02",
+    "agent": "evaluation",
+    "round_no": 1,
+    "attempt_count": 1,
+    "requirements": {
+      "product_name": "山茶里手作奶茶",
+      "product_description": "提供低糖茶底、鲜奶调配和七种冷热甜度选择。",
+      "marketing_goal": "吸引周边写字楼用户到店尝试低糖系列。",
+      "target_audience": "关注甜度控制和提神需求的年轻上班族",
+      "budget": {
+        "amount": 5000.0,
+        "currency": "CNY"
+      },
+      "campaign_period": {
+        "start_date": "2026-10-01",
+        "end_date": "2026-10-31"
+      },
+      "special_requirements": "必选渠道：短视频平台；不得承诺实际效果。",
+      "budget_raw": "5000元"
+    },
+    "strategy": {
+      "schema_version": "1.0",
+      "task_id": "task_demo_02",
+      "round_no": 1,
+      "attempt_count": 1,
+      "status": "succeeded",
+      "result_id": "strategy_demo_02",
+      "version": 1,
+      "error": null,
+      "created_at": "2026-09-23T08:00:00Z",
+      "agent": "strategy",
+      "data": {
+        "target_audience": {
+          "segment": "关注甜度控制和提神需求的年轻上班族",
+          "needs": [
+            "获得清晰、可执行的建议"
+          ],
+          "pain_points": [
+            "信息复杂或难以判断是否适合自己"
+          ],
+          "age_range": null,
+          "occupation": null,
+          "basis": "关注甜度控制和提神需求的年轻上班族"
+        },
+        "positioning": "围绕“下午提神，也可以选一杯更轻的奶茶”强调产品可验证的功能信息。",
+        "selling_points": [
+          {
+            "claim": "提供低糖茶底、鲜奶调配和七种冷热甜度选择。",
+            "source_quote": "提供低糖茶底、鲜奶调配和七种冷热甜度选择。"
+          }
+        ],
+        "channels": [
+          {
+            "name": "短视频平台",
+            "reason": "适合用制作过程和口味对比快速展示低糖选择。",
+            "content_direction": "下午提神，也可以选一杯更轻的奶茶",
+            "allocated_amount": 5000.0
+          }
+        ],
+        "marketing_strategy": {
+          "theme": "下午提神，也可以选一杯更轻的奶茶",
+          "content_directions": [
+            "说明真实功能和使用场景"
+          ],
+          "promotion_methods": [
+            "发布产品介绍并邀请用户了解详情"
+          ]
+        },
+        "assumptions": [
+          "具体转化效果需要通过后续真实投放验证。"
+        ],
+        "missing_information": [],
+        "constraint_conflicts": []
+      }
+    },
+    "creative": {
+      "schema_version": "1.0",
+      "task_id": "task_demo_02",
+      "round_no": 1,
+      "attempt_count": 1,
+      "status": "succeeded",
+      "result_id": "creative_demo_02",
+      "version": 1,
+      "error": null,
+      "created_at": "2026-09-23T08:00:00Z",
+      "agent": "creative",
+      "data": {
+        "strategy_result_id": "strategy_demo_02",
+        "items": [
+          {
+            "channel": "短视频平台",
+            "copy": "七种甜度自由选择，茶底与鲜奶比例清楚标注。",
+            "slogan": "今天这杯，甜度由你",
+            "poster_concept": {
+              "headline": "下午提神，也可以选一杯更轻的奶茶",
+              "visual_description": "使用清晰的信息层级展示产品功能和适用场景。"
+            },
+            "video_script": {
+              "duration_seconds": 15,
+              "scenes": [
+                {
+                  "duration_seconds": 5,
+                  "visual": "展示产品或路线的主要信息。",
+                  "narration": "今天这杯，甜度由你"
+                },
+                {
+                  "duration_seconds": 10,
+                  "visual": "展示目标用户的使用场景。",
+                  "narration": "七种甜度自由选择，茶底与鲜奶比例清楚标注。"
+                }
+              ]
+            }
+          }
+        ],
+        "assumptions": [],
+        "constraint_conflicts": []
+      }
+    },
+    "feedback": [],
+    "previous_result": null,
+    "config_version": "config_demo_v1"
+  },
+  {
+    "schema_version": "1.0",
+    "task_id": "task_demo_03",
+    "agent": "evaluation",
+    "round_no": 1,
+    "attempt_count": 1,
+    "requirements": {
+      "product_name": "凌动 S3 智能手表",
+      "product_description": "支持连续心率记录、睡眠趋势、运动模式和五天续航。",
+      "marketing_goal": "面向通勤人群推广健康数据记录功能。",
+      "target_audience": "重视睡眠和运动记录的城市通勤人群",
+      "budget": {
+        "amount": 5000.0,
+        "currency": "CNY"
+      },
+      "campaign_period": {
+        "start_date": "2026-10-01",
+        "end_date": "2026-10-31"
+      },
+      "special_requirements": "必选渠道：内容种草社区；不得承诺实际效果。",
+      "budget_raw": "5000元"
+    },
+    "strategy": {
+      "schema_version": "1.0",
+      "task_id": "task_demo_03",
+      "round_no": 1,
+      "attempt_count": 1,
+      "status": "succeeded",
+      "result_id": "strategy_demo_03",
+      "version": 1,
+      "error": null,
+      "created_at": "2026-09-23T08:00:00Z",
+      "agent": "strategy",
+      "data": {
+        "target_audience": {
+          "segment": "重视睡眠和运动记录的城市通勤人群",
+          "needs": [
+            "获得清晰、可执行的建议"
+          ],
+          "pain_points": [
+            "信息复杂或难以判断是否适合自己"
+          ],
+          "age_range": null,
+          "occupation": null,
+          "basis": "重视睡眠和运动记录的城市通勤人群"
+        },
+        "positioning": "围绕“把每天的健康变化记录在手腕上”强调产品可验证的功能信息。",
+        "selling_points": [
+          {
+            "claim": "支持连续心率记录、睡眠趋势、运动模式和五天续航。",
+            "source_quote": "支持连续心率记录、睡眠趋势、运动模式和五天续航。"
+          }
+        ],
+        "channels": [
+          {
+            "name": "内容种草社区",
+            "reason": "图文与体验故事能够解释数据记录和续航场景。",
+            "content_direction": "把每天的健康变化记录在手腕上",
+            "allocated_amount": 5000.0
+          }
+        ],
+        "marketing_strategy": {
+          "theme": "把每天的健康变化记录在手腕上",
+          "content_directions": [
+            "说明真实功能和使用场景"
+          ],
+          "promotion_methods": [
+            "发布产品介绍并邀请用户了解详情"
+          ]
+        },
+        "assumptions": [
+          "具体转化效果需要通过后续真实投放验证。"
+        ],
+        "missing_information": [],
+        "constraint_conflicts": []
+      }
+    },
+    "creative": {
+      "schema_version": "1.0",
+      "task_id": "task_demo_03",
+      "round_no": 1,
+      "attempt_count": 1,
+      "status": "succeeded",
+      "result_id": "creative_demo_03",
+      "version": 1,
+      "error": null,
+      "created_at": "2026-09-23T08:00:00Z",
+      "agent": "creative",
+      "data": {
+        "strategy_result_id": "strategy_demo_03",
+        "items": [
+          {
+            "channel": "内容种草社区",
+            "copy": "连续记录心率与睡眠趋势，并提供多种运动模式。",
+            "slogan": "轻抬手腕，看见每天的变化",
+            "poster_concept": {
+              "headline": "把每天的健康变化记录在手腕上",
+              "visual_description": "使用清晰的信息层级展示产品功能和适用场景。"
+            },
+            "video_script": {
+              "duration_seconds": 15,
+              "scenes": [
+                {
+                  "duration_seconds": 5,
+                  "visual": "展示产品或路线的主要信息。",
+                  "narration": "轻抬手腕，看见每天的变化"
+                },
+                {
+                  "duration_seconds": 10,
+                  "visual": "展示目标用户的使用场景。",
+                  "narration": "连续记录心率与睡眠趋势，并提供多种运动模式。"
+                }
+              ]
+            }
+          }
+        ],
+        "assumptions": [],
+        "constraint_conflicts": []
+      }
+    },
+    "feedback": [],
+    "previous_result": null,
+    "config_version": "config_demo_v1"
+  },
+  {
+    "schema_version": "1.0",
+    "task_id": "task_demo_04",
+    "agent": "evaluation",
+    "round_no": 1,
+    "attempt_count": 1,
+    "requirements": {
+      "product_name": "清屿保湿精华",
+      "product_description": "面向干燥肌肤，含透明质酸和甘油，标注无香精配方。",
+      "marketing_goal": "帮助用户理解保湿步骤并申请小样体验。",
+      "target_audience": "关注成分和使用步骤的干燥肌用户",
+      "budget": {
+        "amount": 5000.0,
+        "currency": "CNY"
+      },
+      "campaign_period": {
+        "start_date": "2026-10-01",
+        "end_date": "2026-10-31"
+      },
+      "special_requirements": "必选渠道：图文内容平台；不得承诺实际效果。",
+      "budget_raw": "5000元"
+    },
+    "strategy": {
+      "schema_version": "1.0",
+      "task_id": "task_demo_04",
+      "round_no": 1,
+      "attempt_count": 1,
+      "status": "succeeded",
+      "result_id": "strategy_demo_04",
+      "version": 1,
+      "error": null,
+      "created_at": "2026-09-23T08:00:00Z",
+      "agent": "strategy",
+      "data": {
+        "target_audience": {
+          "segment": "关注成分和使用步骤的干燥肌用户",
+          "needs": [
+            "获得清晰、可执行的建议"
+          ],
+          "pain_points": [
+            "信息复杂或难以判断是否适合自己"
+          ],
+          "age_range": null,
+          "occupation": null,
+          "basis": "关注成分和使用步骤的干燥肌用户"
+        },
+        "positioning": "围绕“先补水再锁水，把保湿步骤讲清楚”强调产品可验证的功能信息。",
+        "selling_points": [
+          {
+            "claim": "面向干燥肌肤，含透明质酸和甘油，标注无香精配方。",
+            "source_quote": "面向干燥肌肤，含透明质酸和甘油，标注无香精配方。"
+          }
+        ],
+        "channels": [
+          {
+            "name": "图文内容平台",
+            "reason": "便于用步骤图和成分说明降低理解成本。",
+            "content_direction": "先补水再锁水，把保湿步骤讲清楚",
+            "allocated_amount": 5000.0
+          }
+        ],
+        "marketing_strategy": {
+          "theme": "先补水再锁水，把保湿步骤讲清楚",
+          "content_directions": [
+            "说明真实功能和使用场景"
+          ],
+          "promotion_methods": [
+            "发布产品介绍并邀请用户了解详情"
+          ]
+        },
+        "assumptions": [
+          "具体转化效果需要通过后续真实投放验证。"
+        ],
+        "missing_information": [],
+        "constraint_conflicts": []
+      }
+    },
+    "creative": {
+      "schema_version": "1.0",
+      "task_id": "task_demo_04",
+      "round_no": 1,
+      "attempt_count": 1,
+      "status": "succeeded",
+      "result_id": "creative_demo_04",
+      "version": 1,
+      "error": null,
+      "created_at": "2026-09-23T08:00:00Z",
+      "agent": "creative",
+      "data": {
+        "strategy_result_id": "strategy_demo_04",
+        "items": [
+          {
+            "channel": "图文内容平台",
+            "copy": "透明质酸与甘油复配，适合纳入日常基础保湿流程。",
+            "slogan": "把每一步保湿，做得更明白",
+            "poster_concept": {
+              "headline": "先补水再锁水，把保湿步骤讲清楚",
+              "visual_description": "使用清晰的信息层级展示产品功能和适用场景。"
+            },
+            "video_script": {
+              "duration_seconds": 15,
+              "scenes": [
+                {
+                  "duration_seconds": 5,
+                  "visual": "展示产品或路线的主要信息。",
+                  "narration": "把每一步保湿，做得更明白"
+                },
+                {
+                  "duration_seconds": 10,
+                  "visual": "展示目标用户的使用场景。",
+                  "narration": "透明质酸与甘油复配，适合纳入日常基础保湿流程。"
+                }
+              ]
+            }
+          }
+        ],
+        "assumptions": [],
+        "constraint_conflicts": []
+      }
+    },
+    "feedback": [],
+    "previous_result": null,
+    "config_version": "config_demo_v1"
+  },
+  {
+    "schema_version": "1.0",
+    "task_id": "task_demo_05",
+    "agent": "evaluation",
+    "round_no": 1,
+    "attempt_count": 1,
+    "requirements": {
+      "product_name": "云岭秋日自然路线",
+      "product_description": "提供三天两晚小团行程，包括徒步向导和当地住宿。",
+      "marketing_goal": "招募秋季周末自然体验用户。",
+      "target_audience": "希望短途放松并偏好小团出行的城市游客",
+      "budget": {
+        "amount": 5000.0,
+        "currency": "CNY"
+      },
+      "campaign_period": {
+        "start_date": "2026-10-01",
+        "end_date": "2026-10-31"
+      },
+      "special_requirements": "必选渠道：旅游社群；不得承诺实际效果。",
+      "budget_raw": "5000元"
+    },
+    "strategy": {
+      "schema_version": "1.0",
+      "task_id": "task_demo_05",
+      "round_no": 1,
+      "attempt_count": 1,
+      "status": "succeeded",
+      "result_id": "strategy_demo_05",
+      "version": 1,
+      "error": null,
+      "created_at": "2026-09-23T08:00:00Z",
+      "agent": "strategy",
+      "data": {
+        "target_audience": {
+          "segment": "希望短途放松并偏好小团出行的城市游客",
+          "needs": [
+            "获得清晰、可执行的建议"
+          ],
+          "pain_points": [
+            "信息复杂或难以判断是否适合自己"
+          ],
+          "age_range": null,
+          "occupation": null,
+          "basis": "希望短途放松并偏好小团出行的城市游客"
+        },
+        "positioning": "围绕“用一个周末走进秋天的山野”强调产品可验证的功能信息。",
+        "selling_points": [
+          {
+            "claim": "提供三天两晚小团行程，包括徒步向导和当地住宿。",
+            "source_quote": "提供三天两晚小团行程，包括徒步向导和当地住宿。"
+          }
+        ],
+        "channels": [
+          {
+            "name": "旅游社群",
+            "reason": "社群适合发布路线细节、名额时间和安全说明。",
+            "content_direction": "用一个周末走进秋天的山野",
+            "allocated_amount": 5000.0
+          }
+        ],
+        "marketing_strategy": {
+          "theme": "用一个周末走进秋天的山野",
+          "content_directions": [
+            "说明真实功能和使用场景"
+          ],
+          "promotion_methods": [
+            "发布产品介绍并邀请用户了解详情"
+          ]
+        },
+        "assumptions": [
+          "具体转化效果需要通过后续真实投放验证。"
+        ],
+        "missing_information": [],
+        "constraint_conflicts": []
+      }
+    },
+    "creative": {
+      "schema_version": "1.0",
+      "task_id": "task_demo_05",
+      "round_no": 1,
+      "attempt_count": 1,
+      "status": "succeeded",
+      "result_id": "creative_demo_05",
+      "version": 1,
+      "error": null,
+      "created_at": "2026-09-23T08:00:00Z",
+      "agent": "creative",
+      "data": {
+        "strategy_result_id": "strategy_demo_05",
+        "items": [
+          {
+            "channel": "旅游社群",
+            "copy": "三天两晚小团路线，包含徒步向导与当地住宿安排。",
+            "slogan": "这个周末，把时间交给山野",
+            "poster_concept": {
+              "headline": "用一个周末走进秋天的山野",
+              "visual_description": "使用清晰的信息层级展示产品功能和适用场景。"
+            },
+            "video_script": {
+              "duration_seconds": 15,
+              "scenes": [
+                {
+                  "duration_seconds": 5,
+                  "visual": "展示产品或路线的主要信息。",
+                  "narration": "这个周末，把时间交给山野"
+                },
+                {
+                  "duration_seconds": 10,
+                  "visual": "展示目标用户的使用场景。",
+                  "narration": "三天两晚小团路线，包含徒步向导与当地住宿安排。"
+                }
+              ]
+            }
+          }
+        ],
+        "assumptions": [],
+        "constraint_conflicts": []
+      }
+    },
+    "feedback": [],
+    "previous_result": null,
+    "config_version": "config_demo_v1"
+  }
+]
