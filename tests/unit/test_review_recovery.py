@@ -86,9 +86,11 @@ class ClassifiedReviewTests(unittest.TestCase):
         self.assertEqual(issue["field"], "channels[0].content_direction")
         self.assertEqual((issue["category"], issue["severity"]), ("quality", "blocking"))
 
-    def test_default_prompt_builds_strategic_choices_v14(self):
+    def test_default_prompt_builds_strategic_choices_and_intake_context_v15(self):
         builder = PromptBuilder()
-        self.assertEqual(builder.version, "v1.4")
+        self.assertEqual(builder.version, "v1.5")
+        self.assertIn("智策需求补充 v1", builder.system_prompt)
+        self.assertIn("known=已提供", builder.system_prompt)
         self.assertIn("形成多个方向", builder.system_prompt)
         self.assertIn("一份有价值的策略必须做出选择", builder.system_prompt)
 

@@ -108,6 +108,7 @@ python -m unittest discover -s tests -v
 
 ```powershell
 node tests/frontend/test_diagnostics.cjs
+node tests/frontend/test_brief.cjs
 ```
 
 自动化测试、离线规则示例和模型辅助复核都不能代替真实模型质量检查及人工验收。正式 50 例真实模型验收会产生费用，应先完成少量案例检查，再由团队确认后执行；不能据策略成功生成，宣称创意、评估或整个系统验收通过。

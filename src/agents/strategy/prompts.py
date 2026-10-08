@@ -21,7 +21,7 @@ class ModelPrompt:
 class PromptBuilder:
     def __init__(self, template_path: Path | None = None):
         root = Path(__file__).resolve().parents[3]
-        self.template_path = template_path or root / "prompts" / "strategy" / "v1.4.txt"
+        self.template_path = template_path or root / "prompts" / "strategy" / "v1.5.txt"
         self.system_prompt = self.template_path.read_text(encoding="utf-8")
         self.version = self.template_path.stem
         self.sha256 = hashlib.sha256(self.system_prompt.encode("utf-8")).hexdigest()

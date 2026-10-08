@@ -11,11 +11,13 @@ let latestTask = null;
 let currentTaskId = null;
 let formMode = "wizard";
 let wizardStep = 0;
-let periodMode = "duration";
-const draftKey = "strategyRequirementDraft.v2";
+let periodMode = "";
+let workspaceView = "input";
+const draftKey = "strategyRequirementDraft.v3";
+const legacyDraftKey = "strategyRequirementDraft.v2";
 const archiveKey = "strategyResultArchive.v1";
-const draftFields = ["productName", "productDescription", "marketingGoal", "targetAudience", "budgetRaw", "budgetAmount", "currency", "durationDays", "startDate", "endDate", "specialRequirements"];
-const textLimits = {productName: 100, productDescription: 5000, marketingGoal: 500, targetAudience: 1000, specialRequirements: 2000};
+const draftFields = StrategyBrief.fields;
+const textLimits = {productName:100,productDescription:1200,productFeatures:800,marketingGoal:100,targetAudience:1000,specialRequirements:500};
 const stageNames = {queued: "排队中", pending: "排队中", generating: "生成策略草案", validating: "结构与约束校验", reviewing: "策略编辑与事实复核", retrying: "自动修复 / 技术重试", completed: "策略完成（尚未评估）", failed: "未完成", interrupted: "服务中断"};
 
 const templates = [
@@ -181,11 +183,16 @@ function renderTemplates() {
 function fillTemplate(id) {
   const template = templates.find(item => item.id === id);
   if (!template) return;
-  draftFields.forEach(field => { if (field !== "currency") $(field).value = ""; });
-  $("currency").value = "CNY";
+  draftFields.forEach(field => { $(field).value = StrategyBrief.defaults[field]; });
   Object.entries(template.values).forEach(([key, value]) => { $(key).value = value; });
+  const category = {ai:"软件与在线服务",tea:"食品饮料",watch:"数码科技",beauty:"美妆个护",travel:"旅游出行"};
+  const goal = {ai:"推动试用",tea:"建立产品认知",watch:"建立产品认知",beauty:"建立产品认知",travel:"获取咨询线索"};
+  const action = {ai:"开始试用",tea:"到店了解或购买",watch:"了解产品信息",beauty:"了解产品信息",travel:"提交咨询"};
+  const values = {productCategory:category[id],productFeatures:template.values.productDescription,primaryGoal:goal[id],desiredAction:action[id],audienceMode:"known",marketingProblem:"暂未确定",salesScope:id === "tea" ? "线下门店" : "暂未确定",budgetMode:"amount",channelsState:"unknown",materialsState:"unknown",teamState:"unknown",constraintStatus:"known"};
+  Object.entries(values).forEach(([key,value]) => { $(key).value = value; });
   parseBudgetInput();
   periodMode = "duration";
+  wizardStep = 0; formMode = "wizard";
   updateFormUi();
   saveDraft();
   $("templatePanel").classList.add("hidden");
@@ -193,7 +200,7 @@ function fillTemplate(id) {
 }
 
 function draftValues() {
-  return {...Object.fromEntries(draftFields.map(id => [id, $(id).value])), formMode, wizardStep, periodMode};
+  return {...Object.fromEntries(draftFields.map(id => [id, $(id).value])), briefVersion:1,formMode,wizardStep,periodMode};
 }
 
 function saveDraft() {
@@ -205,28 +212,30 @@ function saveDraft() {
 
 function restoreDraft() {
   try {
-    const draft = JSON.parse(localStorage.getItem(draftKey) || "null");
-    if (!draft || typeof draft !== "object") return;
-    draftFields.forEach(id => { if (typeof draft[id] === "string") $(id).value = draft[id]; });
+    const raw = JSON.parse(localStorage.getItem(draftKey) || localStorage.getItem(legacyDraftKey) || "null");
+    if (!raw || typeof raw !== "object") return;
+    const draft = StrategyBrief.migrateDraft(raw);
+    draftFields.forEach(id => { $(id).value = draft[id]; });
     formMode = draft.formMode === "single" ? "single" : "wizard";
-    wizardStep = Number.isInteger(draft.wizardStep) ? Math.min(3, Math.max(0, draft.wizardStep)) : 0;
-    periodMode = draft.periodMode === "dates" ? "dates" : "duration";
-    $("draftStatus").textContent = "已恢复上次需求草稿";
+    wizardStep = raw.briefVersion === 1 ? draft.wizardStep : 0;
+    if (raw.briefVersion !== 1) formMode = "wizard";
+    periodMode = draft.periodMode;
+    $("draftStatus").textContent = raw.briefVersion === 1 ? "已恢复上次需求草稿" : "旧草稿已保留，请确认新增项目";
   } catch { /* corrupted storage does not block use */ }
 }
 
 function clearDraft() {
-  draftFields.forEach(id => { $(id).value = id === "currency" ? "CNY" : ""; });
-  try { localStorage.removeItem(draftKey); } catch { /* ignore */ }
-  wizardStep = 0; periodMode = "duration";
+  draftFields.forEach(id => { $(id).value = StrategyBrief.defaults[id]; });
+  try { localStorage.removeItem(draftKey); localStorage.removeItem(legacyDraftKey); } catch { /* ignore */ }
+  wizardStep = 0; periodMode = ""; formMode = "wizard";
   clearFieldErrors(); updateFormUi();
   $("draftStatus").textContent = "草稿已清空";
 }
 
 function restoreRequirements(r) {
-  const values = {productName:r.product_name, productDescription:r.product_description, marketingGoal:r.marketing_goal, targetAudience:r.target_audience, budgetRaw:r.budget_raw, budgetAmount:r.budget?.amount, currency:r.budget?.currency || "CNY", durationDays:r.campaign_period?.duration_days, startDate:r.campaign_period?.start_date, endDate:r.campaign_period?.end_date, specialRequirements:r.special_requirements};
-  Object.entries(values).forEach(([key, value]) => { $(key).value = value ?? ""; });
-  periodMode = r.campaign_period?.start_date ? "dates" : "duration";
+  const values = StrategyBrief.fromRequirements(r);
+  draftFields.forEach(key => { $(key).value = values[key]; });
+  periodMode = values.periodMode;
   updateFormUi();
 }
 
@@ -262,6 +271,7 @@ function parseBudget(raw) {
 }
 
 function parseBudgetInput() {
+  if ($("budgetMode").value !== "amount") return null;
   const raw = $("budgetRaw").value;
   const hint = $("budgetParseHint");
   if (!raw.trim()) { hint.textContent = "输入后会安全解析，无法确认时不会猜测。"; hint.className = "parse-hint"; return null; }
@@ -275,29 +285,29 @@ function parseBudgetInput() {
 }
 
 function buildPayload() {
-  const budgetText = $("budgetAmount").value.trim();
-  const durationText = $("durationDays").value.trim();
-  const campaign = periodMode === "dates" ? (($("startDate").value || $("endDate").value) ? {start_date:$("startDate").value, end_date:$("endDate").value} : null) : (durationText ? {duration_days:Number(durationText)} : null);
-  return {product_name:$("productName").value.trim(), product_description:$("productDescription").value.trim(), marketing_goal:$("marketingGoal").value.trim(), target_audience:optionalText("targetAudience"), budget:budgetText ? {amount:Number(budgetText), currency:$("currency").value} : null, campaign_period:campaign, special_requirements:optionalText("specialRequirements"), budget_raw:optionalText("budgetRaw") || (budgetText ? `${budgetText} ${$("currency").value}` : null)};
+  return StrategyBrief.payload(draftValues());
 }
 
 function clearFieldErrors() {
-  ["productName", "productDescription", "marketingGoal"].forEach(id => { $(id).removeAttribute("aria-invalid"); $(`${id}Error`).textContent = ""; });
-  $("budgetError").textContent = ""; $("periodError").textContent = "";
+  draftFields.forEach(id => $(id).removeAttribute("aria-invalid"));
+  $("periodChoice").removeAttribute("aria-invalid");
+  document.querySelectorAll(".field-error, .field-meta > span[id]").forEach(node => { node.textContent = ""; });
 }
 
 function validateForm(scopeStep = null) {
   clearFieldErrors();
   const errors = [];
-  [{id:"productName",step:0,label:"产品名称"},{id:"productDescription",step:0,label:"产品介绍"},{id:"marketingGoal",step:1,label:"营销目标"}].forEach(field => {
-    if (scopeStep !== null && field.step !== scopeStep) return;
-    if (!$(field.id).value.trim()) { $(`${field.id}Error`).textContent = `${field.label}不能为空。`; $(field.id).setAttribute("aria-invalid", "true"); errors.push({step:field.step,node:$(field.id)}); }
+  StrategyBrief.requirements(draftValues(),scopeStep).filter(field => !field.complete).forEach(field => {
+    const node = $(field.id === "periodMode" ? "periodChoice" : field.id);
+    const message = $(`${field.id}Error`) || (field.id === "budgetAmount" ? $("budgetError") : null);
+    if (message) message.textContent = `请填写或确认${field.label}。`;
+    node.setAttribute("aria-invalid", "true"); errors.push({step:field.step,node});
   });
   if (scopeStep === null || scopeStep === 2) {
     const raw = $("budgetRaw").value.trim(), amount = $("budgetAmount").value.trim();
     const parsed = raw ? parseBudget(raw) : null;
-    if (raw && (!parsed || parsed.error) && !amount) { $("budgetError").textContent = "预算原始表达无法解析，请填写明确金额。"; errors.push({step:2,node:$("budgetRaw")}); }
-    if (amount && (!Number.isFinite(Number(amount)) || Number(amount) < 0 || Number(amount) > 100000000 || !/^\d+(?:\.\d{1,2})?$/.test(amount))) { $("budgetError").textContent = "金额须为 0–1 亿，最多两位小数。"; errors.push({step:2,node:$("budgetAmount")}); }
+    if ($("budgetMode").value === "amount" && raw && (!parsed || parsed.error) && !amount) { $("budgetError").textContent = "预算表达无法解析，请填写明确金额。"; errors.push({step:2,node:$("budgetRaw")}); }
+    if ($("budgetMode").value === "amount" && amount && (!Number.isFinite(Number(amount)) || Number(amount) <= 0 || Number(amount) > 100000000 || !/^\d+(?:\.\d{1,2})?$/.test(amount))) { $("budgetError").textContent = "填写大于 0、不超过 1 亿的金额，最多两位小数；零预算请选择“零预算”。"; errors.push({step:2,node:$("budgetAmount")}); }
     if (periodMode === "duration" && $("durationDays").value && (!Number.isInteger(Number($("durationDays").value)) || Number($("durationDays").value) < 1 || Number($("durationDays").value) > 365)) { $("periodError").textContent = "持续天数须为 1–365 的整数。"; errors.push({step:2,node:$("durationDays")}); }
     if (periodMode === "dates") {
       const start = $("startDate").value, end = $("endDate").value;
@@ -305,24 +315,21 @@ function validateForm(scopeStep = null) {
       else if (start && end && end < start) { $("periodError").textContent = "结束日期不能早于开始日期。"; errors.push({step:2,node:$("endDate")}); }
     }
   }
+  const payload = buildPayload();
+  [{key:"product_description",id:"productDescription",step:0,max:5000},{key:"marketing_goal",id:"marketingGoal",step:1,max:500},{key:"special_requirements",id:"specialRequirements",step:3,max:2000}].forEach(limit => {
+    if ((scopeStep === null || scopeStep === limit.step) && payload[limit.key].length > limit.max) {
+      const message = $(`${limit.id}Error`); if (message) message.textContent = `本组信息合并后超过接口 ${limit.max} 字限制，请简化文字；草稿仍会保留。`;
+      errors.push({step:limit.step,node:$(limit.id)});
+    }
+  });
   return errors;
 }
 
-function updateCounters() {
-  Object.entries(textLimits).forEach(([id, limit]) => {
-    const count = $(id).value.length;
-    const node = document.querySelector(`[data-counter="${id}"]`);
-    if (node) { node.textContent = `${count}/${limit}`; node.style.color = count / limit > .9 ? "var(--accent-dark)" : ""; }
-  });
-  const done = ["productName", "productDescription", "marketingGoal"].filter(id => $(id).value.trim()).length;
-  $("completionText").textContent = `必填项 ${done}/3`;
-  $("completionBar").style.width = `${done / 3 * 100}%`;
-}
-
 function updateBriefSummary() {
-  const period = periodMode === "dates" ? ($("startDate").value && $("endDate").value ? `${$("startDate").value} 至 ${$("endDate").value}` : "周期待定") : ($("durationDays").value ? `${$("durationDays").value} 天` : "周期待定");
-  const items = [["产品", $("productName").value.trim() || "未填写"], ["目标用户", $("targetAudience").value.trim() || "由智能体提出候选"], ["预算 / 周期", `${$("budgetAmount").value ? `${Number($("budgetAmount").value).toLocaleString("zh-CN")} ${$("currency").value}` : "预算待定"} · ${period}`]];
-  $("briefSummary").replaceChildren(...items.map(([label,value]) => { const node = document.createElement("div"); node.append(textElement("span",label),textElement("strong",value)); return node; }));
+  const period = periodMode === "dates" ? ($("startDate").value && $("endDate").value ? `${$("startDate").value} 至 ${$("endDate").value}` : "周期待定") : periodMode === "duration" && $("durationDays").value ? `${$("durationDays").value} 天` : "周期待定";
+  const resource = (state,id) => $(state).value === "known" ? $(id).value.trim() || "需要补充" : $(state).value === "none" ? "确认目前没有" : "暂未确定";
+  const items = [["产品",$("productName").value.trim() || "需要补充"],["品类 / 销售方式",`${$("productCategory").value || "需要补充"} · ${$("salesScope").value || "需要确认"}`],["已确认特点",$("productFeatures").value.trim() || "需要补充"],["价格",$("priceStatus").value === "known" ? $("priceInfo").value.trim() || "需要补充" : "暂未确定"],["销售地区",$("salesRegion").value.trim() || "暂未确定"],["购买或咨询入口",$("purchaseStatus").value === "known" ? $("purchaseEntry").value.trim() || "需要补充" : "暂未确定"],["首要目标",$("primaryGoal").value === "其他" ? $("marketingGoal").value.trim() : $("primaryGoal").value || "需要确认"],["用户下一步行动",$("desiredAction").value === "其他" ? $("actionDetail").value.trim() : $("desiredAction").value || "需要确认"],["目标人群",$("audienceMode").value === "known" ? $("targetAudience").value.trim() || "需要补充" : "由智能体提出待验证候选"],["当前难题",$("marketingProblem").value === "其他" ? $("problemDetail").value.trim() : $("marketingProblem").value || "需要确认"],["预算 / 周期",`${$("budgetMode").value === "zero" ? "零预算" : $("budgetMode").value === "amount" && $("budgetAmount").value ? `${Number($("budgetAmount").value).toLocaleString("zh-CN")} ${$("currency").value}` : "预算待定"} · ${period}`],["已有渠道",resource("channelsState","existingChannels")],["可用素材",resource("materialsState","availableMaterials")],["执行人力",resource("teamState","teamResources")],["特殊限制",$("constraintStatus").value === "known" ? $("specialRequirements").value.trim() || "需要补充" : $("constraintStatus").value === "none" ? "确认暂无额外限制" : "暂未确定"],["品牌语气",$("brandStyle").value.trim() || "暂未提供"]];
+  $("briefSummary").replaceChildren(...items.map(([label,value]) => { const node = document.createElement("div"); node.append(textElement("span",label),textElement("strong",value || "需要补充")); if (/暂未|待定|需要|候选/.test(value || "需要")) node.className = "summary-pending"; return node; }));
 }
 
 function syncFormMode() {
@@ -334,26 +341,37 @@ function syncFormMode() {
   $("submitButton").classList.toggle("hidden", formMode === "wizard" && wizardStep !== 3);
   $("wizardPrev").disabled = wizardStep === 0;
   document.querySelectorAll(".form-section").forEach(section => section.classList.toggle("active", Number(section.dataset.step) === wizardStep));
-  $("wizardProgress").replaceChildren(...[0,1,2,3].map(index => textElement("span", `0${index+1}`, `wizard-dot${index===wizardStep?" active":""}${index<wizardStep?" done":""}`)));
+  $("wizardProgress").replaceChildren(...StrategyBrief.steps.map((label,index) => {
+    const button = textElement("button","",`wizard-step${index === wizardStep ? " active" : ""}`); button.type = "button"; button.dataset.stepTarget = String(index); if(index === wizardStep) button.setAttribute("aria-current","step");
+    button.append(textElement("span",`0${index+1}`,"wizard-dot"),textElement("strong",label)); return button;
+  }));
 }
 
 function syncPeriodMode() {
-  document.querySelectorAll("[data-period-mode]").forEach(button => button.classList.toggle("active", button.dataset.periodMode === periodMode));
+  $("periodChoice").value = periodMode;
   document.querySelectorAll("[data-period-panel]").forEach(node => node.classList.toggle("hidden", node.dataset.periodPanel !== periodMode));
-  if (periodMode === "dates") $("durationDays").value = "";
-  else { $("startDate").value = ""; $("endDate").value = ""; }
 }
 
-function updateFormUi() { updateCounters(); updateBriefSummary(); syncPeriodMode(); syncFormMode(); }
+function syncConditionalFields() { document.querySelectorAll("[data-show-field]").forEach(node => node.classList.toggle("hidden", $(node.dataset.showField).value !== node.dataset.showValue)); }
+function updateFormUi() { syncConditionalFields(); syncPeriodMode(); updateBriefSummary(); syncFormMode(); }
+
+function showWorkspaceView(view, scroll = false) {
+  workspaceView = view === "result" ? "result" : "input";
+  $("requirementsPanel").classList.toggle("hidden",workspaceView !== "input"); $("resultPanel").classList.toggle("hidden",workspaceView !== "result");
+  document.querySelectorAll("[data-workspace-view]").forEach(button => { const selected = button.dataset.workspaceView === workspaceView; button.classList.toggle("current",selected); button.setAttribute("aria-pressed",String(selected)); });
+  $("workspaceTitle").textContent = workspaceView === "input" ? "策略智能体" : "查看你的策略方案。";
+  if (scroll) $("workspaceTop").scrollIntoView({behavior:"smooth",block:"start"});
+}
 
 function formattedStrategy(response = latestResponse) {
   if (!response?.data) return "";
   const d = response.data;
-  return [`${$("productName").value.trim() || "产品"}｜营销策略`,"","一、策略定位",d.positioning,"","二、目标用户",d.target_audience.segment,`依据：${d.target_audience.basis}`,...d.target_audience.needs.map(v=>`- 需求：${v}`),...d.target_audience.pain_points.map(v=>`- 痛点：${v}`),"","三、核心卖点",...d.selling_points.flatMap((p,i)=>[`${i+1}. ${p.claim}`,`   依据原文：${p.source_quote}`]),"","四、渠道策略",...d.channels.flatMap((c,i)=>[`${i+1}. ${c.name}${c.allocated_amount==null?"":`｜${c.allocated_amount} ${latestTask?.requirements?.budget?.currency||""}`}`,`   为什么：${c.reason}`,`   发布什么：${c.content_direction}`]),"","五、推广策略",`主题：${d.marketing_strategy.theme}`,...d.marketing_strategy.content_directions.map(v=>`- 内容方向：${v}`),...d.marketing_strategy.promotion_methods.map(v=>`- 执行动作：${v}`),"","六、发布前需核实",...(d.assumptions.length?d.assumptions.map(v=>`- 假设：${v}`):["- 无待验证假设"]),...(d.missing_information.length?d.missing_information.map(v=>`- 信息缺口：${v}`):["- 无信息缺口"]),...d.constraint_conflicts.map(v=>`- 约束冲突：${v}`)].join("\n");
+return [`${latestTask?.requirements?.product_name || $("productName").value.trim() || "产品"}｜营销策略`,"","一、策略定位",d.positioning,"","二、目标用户",d.target_audience.segment,`依据：${d.target_audience.basis}`,...d.target_audience.needs.map(v=>`- 需求：${v}`),...d.target_audience.pain_points.map(v=>`- 痛点：${v}`),"","三、核心卖点",...d.selling_points.flatMap((p,i)=>[`${i+1}. ${p.claim}`,`   依据原文：${p.source_quote}`]),"","四、渠道策略",...d.channels.flatMap((c,i)=>[`${i+1}. ${c.name}${c.allocated_amount==null?"":`｜${c.allocated_amount} ${latestTask?.requirements?.budget?.currency||""}`}`,`   为什么：${c.reason}`,`   发布什么：${c.content_direction}`]),"","五、推广策略",`主题：${d.marketing_strategy.theme}`,...d.marketing_strategy.content_directions.map(v=>`- 内容方向：${v}`),...d.marketing_strategy.promotion_methods.map(v=>`- 执行动作：${v}`),"","六、发布前需核实",...(d.assumptions.length?d.assumptions.map(v=>`- 假设：${v}`):["- 无待验证假设"]),...(d.missing_information.length?d.missing_information.map(v=>`- 信息缺口：${v}`):["- 无信息缺口"]),...d.constraint_conflicts.map(v=>`- 约束冲突：${v}`)].join("\n");
 }
 
 function renderResult(response) {
   latestResponse = response;
+  $("resultMessage").textContent = "";
   const data = response.data;
   selectResultTab("strategyOverview");
   const amounts = data.channels.filter(channel => channel.allocated_amount != null);
@@ -401,8 +419,8 @@ function renderResult(response) {
 }
 
 function locateSource(quote) {
-  const target=["productDescription","marketingGoal","productName","targetAudience","specialRequirements"].map(id=>$(id)).find(node=>node.value.includes(quote))||$("productDescription");
-  formMode="single"; syncFormMode(); target.scrollIntoView({behavior:"smooth",block:"center"}); target.focus(); target.classList.remove("source-flash"); requestAnimationFrame(()=>target.classList.add("source-flash"));
+  const target=["productDescription","productFeatures","priceInfo","purchaseEntry","salesRegion","marketingGoal","productName","targetAudience","specialRequirements"].map(id=>$(id)).find(node=>node.value.includes(quote))||$("productDescription");
+  showWorkspaceView("input"); formMode="wizard"; wizardStep=Number(target.closest(".form-section")?.dataset.step || 0); updateFormUi(); target.scrollIntoView({behavior:"smooth",block:"center"}); target.focus(); target.classList.remove("source-flash"); requestAnimationFrame(()=>target.classList.add("source-flash"));
   if(target.value.includes(quote)){const start=target.value.indexOf(quote);target.setSelectionRange(start,start+quote.length);}
 }
 
@@ -411,8 +429,9 @@ function selectResultTab(id) {
 }
 
 function setLoading(loading) {
-  $("submitButton").disabled=loading; $("submitButton").querySelector("span:first-child").textContent=loading?"智能体正在生成…":"生成营销策略";
+  $("submitButton").disabled=loading; $("submitButton").querySelector("span:first-child").textContent=loading?"智能体正在生成…":"确认需求，生成策略";
   if(!loading)return;
+  $("resultMessage").textContent = "";
   latestResponse=null;latestTask=null;["copyResult","exportStrategy","exportResult","exportCreative"].forEach(id=>{$(id).disabled=true;});
   $("emptyState").classList.add("hidden");$("resultContent").classList.add("hidden");$("loadingState").classList.remove("hidden");["failureState","reviewNotes","diagnostics"].forEach(id=>$(id).classList.add("hidden"));$("workflow").querySelectorAll("li").forEach(node=>node.classList.remove("active","done"));
 }
@@ -420,42 +439,48 @@ function setLoading(loading) {
 async function submitForm(event) {
   event.preventDefault(); $("formMessage").textContent=""; parseBudgetInput();
   const errors=validateForm();
-  if(errors.length){wizardStep=errors[0].step;syncFormMode();errors[0].node.focus();$("formMessage").textContent=`有 ${errors.length} 项需要修改，已定位到第一项。`;return;}
+  if(errors.length){showWorkspaceView("input");wizardStep=errors[0].step;syncFormMode();errors[0].node.focus();$("formMessage").textContent=`有 ${errors.length} 项需要修改，已定位到第一项。`;return;}
+  const requestPayload=buildPayload();
   saveDraft();setLoading(true);currentTaskId=null;
+  showWorkspaceView("result",true);
   try{
     const session=await fetch("/api/session",{cache:"no-store"});if(!session.ok)throw new Error("无法建立任务会话");
-    const response=await fetch("/api/tasks",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(buildPayload())});const result=await response.json();
+    const response=await fetch("/api/tasks",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(requestPayload)});const result=await response.json();
     if(!response.ok||!result.task_id){const error=new Error(result.error?.message||"策略生成失败");error.code=result.error?.code;throw error;}
     rememberTask(result.task_id);$("resultPanel").scrollIntoView({behavior:"smooth",block:"start"});await pollTask(result.task_id);
   }catch(error){showFailure(error.message,error.code,Boolean(currentTaskId)&&!error.code);}finally{setLoading(false);}
 }
 
 function downloadTask(suffix="") {if(!latestTask)return;const anchor=document.createElement("a");anchor.href=`/api/tasks/${encodeURIComponent(latestTask.task_id)}${suffix}?download=1`;anchor.download=`${latestTask.task_id}${suffix.replaceAll("/","-")||"-strategy-task"}.json`;document.body.appendChild(anchor);anchor.click();anchor.remove();}
-function exportStrategy(){if(!latestResponse)return;const bom=new Uint8Array([0xEF,0xBB,0xBF]),blob=new Blob([bom,JSON.stringify(latestResponse,null,2)],{type:"application/json;charset=utf-8"}),anchor=document.createElement("a");anchor.href=URL.createObjectURL(blob);const safeName=($("productName").value.trim()||"strategy").replace(/[\\/:*?"<>|]/g,"-");anchor.download=`${safeName}-${new Date().toISOString().slice(0,10)}.json`;document.body.appendChild(anchor);anchor.click();anchor.remove();URL.revokeObjectURL(anchor.href);}
-async function exportCreative(){if(!latestTask)return;try{const response=await fetch(`/api/tasks/${encodeURIComponent(latestTask.task_id)}/creative-request`,{cache:"no-store"}),payload=await response.json();if(!response.ok)throw new Error(payload.error?.message||"下游请求校验失败");downloadTask("/creative-request");}catch(error){$("formMessage").textContent=error.message;}}
-async function writeClipboard(text,button){try{await navigator.clipboard.writeText(text);}catch{$("formMessage").textContent="浏览器未允许复制，请使用导出功能。";return;}const original=button.textContent;button.textContent="已复制";setTimeout(()=>{button.textContent=original;},1200);}
+function exportStrategy(){if(!latestResponse)return;const bom=new Uint8Array([0xEF,0xBB,0xBF]),blob=new Blob([bom,JSON.stringify(latestResponse,null,2)],{type:"application/json;charset=utf-8"}),anchor=document.createElement("a");anchor.href=URL.createObjectURL(blob);const safeName=(latestTask?.requirements?.product_name||$("productName").value.trim()||"strategy").replace(/[\\/:*?"<>|]/g,"-");anchor.download=`${safeName}-${new Date().toISOString().slice(0,10)}.json`;document.body.appendChild(anchor);anchor.click();anchor.remove();URL.revokeObjectURL(anchor.href);}
+async function exportCreative(){if(!latestTask)return;$("resultMessage").textContent="";try{const response=await fetch(`/api/tasks/${encodeURIComponent(latestTask.task_id)}/creative-request`,{cache:"no-store"}),payload=await response.json();if(!response.ok)throw new Error(payload.error?.message||"下游请求校验失败");downloadTask("/creative-request");}catch(error){$("resultMessage").textContent=error.message;}}
+async function writeClipboard(text,button){$("resultMessage").textContent="";try{await navigator.clipboard.writeText(text);}catch{$("resultMessage").textContent="浏览器未允许复制，请使用导出功能。";return;}const original=button.textContent;button.textContent="已复制";setTimeout(()=>{button.textContent=original;},1200);}
 
 function archiveTask(task){try{const archive=JSON.parse(localStorage.getItem(archiveKey)||"[]"),next=[task,...archive.filter(item=>item.task_id!==task.task_id)].slice(0,20);localStorage.setItem(archiveKey,JSON.stringify(next));renderRecentTasks();}catch{/* optional */}}
 function renderRecentTasks(){const host=$("recentTasks");host.replaceChildren(textElement("h3","最近结果 · 本地归档"));try{const archive=JSON.parse(localStorage.getItem(archiveKey)||"[]").slice(0,4);if(!archive.length){host.appendChild(textElement("p","生成后的结果会保存在这里。","muted"));return;}archive.forEach(task=>{const button=textElement("button","","recent-task");button.type="button";button.dataset.archiveId=task.task_id;button.append(textElement("strong",task.requirements.product_name),textElement("time",new Date(task.created_at).toLocaleDateString("zh-CN")),textElement("span",`版本 ${task.result?.version||1} · ${task.result?.data?.channels?.length||0} 个渠道`));host.appendChild(button);});}catch{host.appendChild(textElement("p","本地归档暂不可用。","muted"));}}
-function openArchived(id){try{const task=JSON.parse(localStorage.getItem(archiveKey)||"[]").find(item=>item.task_id===id);if(!task)return;restoreRequirements(task.requirements);renderTask(task);renderResult(task.result);$("resultPanel").scrollIntoView({behavior:"smooth",block:"start"});}catch{/* ignore */}}
-async function resumeTask(){if(!currentTaskId)return;setLoading(true);try{await pollTask(currentTaskId,!$("productName").value);}catch(error){showFailure(error.message,error.code,!error.code);}finally{setLoading(false);}}
+function openArchived(id){try{const task=JSON.parse(localStorage.getItem(archiveKey)||"[]").find(item=>item.task_id===id);if(!task)return;restoreRequirements(task.requirements);renderTask(task);renderResult(task.result);showWorkspaceView("result",true);}catch{/* ignore */}}
+async function resumeTask(reveal=true){if(!currentTaskId)return;if(reveal)showWorkspaceView("result",true);setLoading(true);try{await pollTask(currentTaskId,!$("productName").value);}catch(error){showFailure(error.message,error.code,!error.code);}finally{setLoading(false);}}
 
-renderTemplates();restoreDraft();updateFormUi();renderRecentTasks();loadHealth();
+renderTemplates();restoreDraft();updateFormUi();renderRecentTasks();loadHealth();showWorkspaceView("input");
 $("strategyForm").addEventListener("submit",submitForm);
 $("saveDraft").addEventListener("click",saveDraft);$("clearDraft").addEventListener("click",clearDraft);
 $("toggleTemplates").addEventListener("click",()=>{const panel=$("templatePanel");panel.classList.toggle("hidden");$("toggleTemplates").setAttribute("aria-expanded",String(!panel.classList.contains("hidden")));});
 $("templateList").addEventListener("click",event=>{const button=event.target.closest("[data-template]");if(button)fillTemplate(button.dataset.template);});
 $("recentTasks").addEventListener("click",event=>{const button=event.target.closest("[data-archive-id]");if(button)openArchived(button.dataset.archiveId);});
-$("budgetRaw").addEventListener("blur",()=>{parseBudgetInput();updateBriefSummary();});
+$("budgetRaw").addEventListener("blur",()=>{parseBudgetInput();updateBriefSummary();saveDraft();});
 document.querySelectorAll("[data-form-mode]").forEach(button=>button.addEventListener("click",()=>{formMode=button.dataset.formMode;syncFormMode();saveDraft();}));
-document.querySelectorAll("[data-period-mode]").forEach(button=>button.addEventListener("click",()=>{periodMode=button.dataset.periodMode;syncPeriodMode();updateBriefSummary();}));
+$("periodChoice").addEventListener("change",()=>{periodMode=$("periodChoice").value;updateFormUi();saveDraft();});
+$("budgetAmount").addEventListener("input",()=>{$("budgetRaw").value="";$("budgetParseHint").textContent="已使用数字金额，请确认币种。";});
+document.querySelectorAll("[data-workspace-view]").forEach(button=>button.addEventListener("click",()=>showWorkspaceView(button.dataset.workspaceView,true)));
+$("editRequirements").addEventListener("click",()=>showWorkspaceView("input",true));
+$("wizardProgress").addEventListener("click",event=>{const button=event.target.closest("[data-step-target]");if(!button)return;const target=Number(button.dataset.stepTarget);if(target>wizardStep){for(let step=0;step<target;step++){const errors=validateForm(step);if(errors.length){wizardStep=step;syncFormMode();errors[0].node.focus();$("formMessage").textContent="请先确认前面步骤的必要信息。";return;}}}wizardStep=target;$("formMessage").textContent="";updateFormUi();saveDraft();});
 document.querySelectorAll("[data-days]").forEach(button=>button.addEventListener("click",()=>{$("durationDays").value=button.dataset.days;updateBriefSummary();saveDraft();}));
-document.querySelectorAll("[data-goal]").forEach(button=>button.addEventListener("click",()=>{$("marketingGoal").value=button.dataset.goal;updateFormUi();}));
-$("wizardPrev").addEventListener("click",()=>{wizardStep=Math.max(0,wizardStep-1);syncFormMode();});
-$("wizardNext").addEventListener("click",()=>{const errors=validateForm(wizardStep);if(errors.length){errors[0].node.focus();$("formMessage").textContent="请先完成本步中的必要信息。";return;}$("formMessage").textContent="";wizardStep=Math.min(3,wizardStep+1);updateFormUi();});
+document.querySelectorAll("[data-goal]").forEach(button=>button.addEventListener("click",()=>{$("marketingGoal").value=button.dataset.goal;updateFormUi();saveDraft();}));
+$("wizardPrev").addEventListener("click",()=>{wizardStep=Math.max(0,wizardStep-1);$("formMessage").textContent="";syncFormMode();saveDraft();});
+$("wizardNext").addEventListener("click",()=>{parseBudgetInput();const errors=validateForm(wizardStep);if(errors.length){errors[0].node.focus();$("formMessage").textContent="请先完成本步中的必要信息。";return;}$("formMessage").textContent="";wizardStep=Math.min(3,wizardStep+1);updateFormUi();saveDraft();$("requirementsPanel").scrollIntoView({behavior:"smooth",block:"start"});});
 $("copyResult").addEventListener("click",event=>writeClipboard(formattedStrategy(),event.currentTarget));
 $("exportStrategy").addEventListener("click",exportStrategy);$("exportResult").addEventListener("click",()=>downloadTask());$("exportCreative").addEventListener("click",exportCreative);$("resumeTask").addEventListener("click",resumeTask);$("retryTask").addEventListener("click",()=>$("strategyForm").requestSubmit());
 document.querySelectorAll("[data-copy-module]").forEach(button=>button.addEventListener("click",()=>{if(!latestResponse)return;const d=latestResponse.data,text=button.dataset.copyModule==="selling"?d.selling_points.map((p,i)=>`${i+1}. ${p.claim}\n依据：${p.source_quote}`).join("\n"):d.channels.map((c,i)=>`${i+1}. ${c.name}\n为什么：${c.reason}\n发布什么：${c.content_direction}`).join("\n\n");writeClipboard(text,button);}));
 document.querySelectorAll("[data-result-tab]").forEach((button,index,buttons)=>{button.addEventListener("click",()=>selectResultTab(button.dataset.resultTab));button.addEventListener("keydown",event=>{const moves={ArrowRight:(index+1)%buttons.length,ArrowLeft:(index+buttons.length-1)%buttons.length,Home:0,End:buttons.length-1};if(!(event.key in moves))return;event.preventDefault();const next=buttons[moves[event.key]];selectResultTab(next.dataset.resultTab);next.focus();});});
-let draftTimer;draftFields.forEach(id=>$(id).addEventListener("input",()=>{clearTimeout(draftTimer);updateCounters();updateBriefSummary();$("draftStatus").textContent="正在保存草稿…";draftTimer=setTimeout(saveDraft,350);}));
-try{currentTaskId=sessionStorage.getItem("strategyTaskId");}catch{/* optional */}if(currentTaskId)resumeTask();
+draftFields.forEach(id=>{const handler=()=>{clearFieldErrors();updateFormUi();saveDraft();};$(id).addEventListener("input",handler);$(id).addEventListener("change",handler);});
+try{currentTaskId=sessionStorage.getItem("strategyTaskId");}catch{/* optional */}if(currentTaskId)resumeTask(false);

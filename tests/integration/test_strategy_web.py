@@ -32,7 +32,7 @@ class StrategyWebTests(unittest.TestCase):
         self.assertEqual(value["agent"], "strategy")
 
     def test_updated_assets_not_stale_cached(self):
-        for path in ("/", "/styles.css?v=20261003-review3", "/app.js?v=20261003-review3"):
+        for path in ("/", "/workspace", "/styles.css?v=20261008-heros1", "/brief.js?v=20261008-brief1", "/app.js?v=20261008-clean1"):
             with request.urlopen(self.base_url + path, timeout=2) as response:
                 self.assertEqual(response.status, 200)
                 self.assertEqual(response.headers["Cache-Control"], "no-store")
@@ -59,7 +59,6 @@ class StrategyWebTests(unittest.TestCase):
             "startDate",
             "endDate",
             "wizardProgress",
-            "completionBar",
             "recentTasks",
             "budgetSummary",
         ):
@@ -69,6 +68,14 @@ class StrategyWebTests(unittest.TestCase):
         self.assertIn("formattedStrategy", script)
         self.assertIn("locateSource", script)
         self.assertIn("strategyResultArchive.v1", script)
+        self.assertNotIn('id="workspaceDescription"', page)
+        self.assertNotIn('class="field-help"', page)
+
+    def test_workspace_serves_local_fonts(self):
+        for face in ("regular", "bold"):
+            with request.urlopen(self.base_url + f"/fonts/tex-gyre-heros/texgyreheros-{face}.otf", timeout=2) as response:
+                self.assertEqual(response.status, 200)
+                self.assertEqual(response.read(4), b"OTTO")
 
     def test_homepage_introduces_agent_and_links_to_workspace(self):
         with request.urlopen(self.base_url + "/", timeout=2) as response:

@@ -36,6 +36,7 @@ const document = {
   createElement: tag => new Element(tag),
 };
 const context = vm.createContext({document, Map, Number});
+vm.runInContext(fs.readFileSync(path.join(root,'web/brief.js'),'utf8'), context);
 // Only omit page initialization/event wiring; renderer functions are unchanged.
 vm.runInContext(source.slice(0, source.indexOf('renderTemplates();restoreDraft();')), context);
 const issue = index => ({category:'quality', field:`channels[${index}].content_direction`, message:'已分配预算的渠道必须说明预算用于哪项具体执行动作'});
@@ -82,7 +83,8 @@ if (process.argv.includes('--preview')) {
   http.createServer((req, res) => {
     const isCss = req.url.startsWith('/styles.css');
     const isJs = req.url.startsWith('/app.js');
-    res.setHeader('Content-Type', isCss ? 'text/css' : isJs ? 'application/javascript' : 'text/html; charset=utf-8');
-    res.end(isCss ? fs.readFileSync(path.join(root,'web/styles.css')) : isJs ? previewScript : page);
+    const isBrief = req.url.startsWith('/brief.js');
+    res.setHeader('Content-Type', isCss ? 'text/css' : isJs || isBrief ? 'application/javascript' : 'text/html; charset=utf-8');
+    res.end(isCss ? fs.readFileSync(path.join(root,'web/styles.css')) : isBrief ? fs.readFileSync(path.join(root,'web/brief.js')) : isJs ? previewScript : page.replace('panel result-panel hidden','panel result-panel'));
   }).listen(8001, '127.0.0.1', () => console.log('Visual fixture: http://127.0.0.1:8001/workspace'));
 }

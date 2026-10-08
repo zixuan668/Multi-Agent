@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="智策营销策略智能体" />
     <title>智策营销策略智能体</title>
-    <link rel="stylesheet" href="/styles.css?v=20261008-neumorphism1" />
+    <link rel="stylesheet" href="/styles.css?v=20261008-heros1" />
   </head>
   <body>
     <div class="app-shell">
@@ -13,11 +13,11 @@
     <header class="topbar">
       <a class="workspace-home-link" href="/" aria-label="返回智策营销首页">
         <span class="workspace-brand-mark">策</span>
-        <span><strong>智策营销</strong><small>营销策略智能体</small></span>
+        <span><strong>智策营销</strong></span>
       </a>
       <nav class="workspace-navigation" aria-label="工作台导航">
-        <a href="#requirementsPanel" class="current">填写需求</a>
-        <a href="#resultPanel">策略方案</a>
+        <button type="button" data-workspace-view="input" class="current" aria-pressed="true">填写需求</button>
+        <button type="button" data-workspace-view="result" aria-pressed="false">策略方案</button>
         <a href="/">返回首页</a>
       </nav>
       <div id="modelBadge" class="mode-badge">正在检查模型…</div>
@@ -25,14 +25,7 @@
 
     <section class="workspace-intro">
       <div>
-        <p class="eyebrow">智策营销 / 策略工作空间</p>
-        <h1>把产品信息，<br />变成<span>营销方向。</span></h1>
-        <p class="intro-description">写下你的产品与目标，<br />让每一份策略都有依据、有选择、能执行。</p>
-      </div>
-      <div class="workspace-stamp">
-        <div class="stamp-inset"><span>从事实出发</span><strong>好策略，始于好问题。</strong><p>产品特点 · 用户目标 · 资源约束</p></div>
-        <div class="stamp-actions"><a href="#requirementsPanel">填写需求 <span aria-hidden="true">↗</span></a><a href="#resultPanel">查看策略 <span aria-hidden="true">→</span></a></div>
-        <p class="stamp-caption">填写需求 → 生成策略 → 交付创意</p>
+        <h1 id="workspaceTitle">策略智能体</h1>
       </div>
     </section>
 
@@ -40,122 +33,102 @@
       <section id="requirementsPanel" class="panel input-panel">
         <div class="panel-heading">
           <div>
-            <p class="step">01 输入营销需求</p>
-            <h2>营销需求</h2>
+            <h2>建立你的营销简报</h2>
           </div>
           <div class="draft-actions">
-            <span id="draftStatus" class="draft-status">草稿会保存在此浏览器</span>
+            <span id="draftStatus" class="draft-status"></span>
             <button id="saveDraft" class="text-button" type="button">保存草稿</button>
             <button id="clearDraft" class="text-button" type="button">清空草稿</button>
             <button id="toggleTemplates" class="text-button" type="button" aria-expanded="false">示例模板</button>
           </div>
         </div>
-        <div class="input-guide">
-          <p>填写真实产品信息。预算或周期暂不确定，可留空，智能体会明确标注信息缺口。</p>
-          <div class="completion"><span id="completionText">必填项 0/3</span><div><i id="completionBar"></i></div></div>
-        </div>
 
         <form id="strategyForm" class="brief-form wizard-mode" novalidate>
           <div class="form-commandbar">
-            <div class="view-switch" role="group" aria-label="录入模式">
-              <button type="button" class="active" data-form-mode="wizard">分步向导</button>
-              <button type="button" data-form-mode="single">完整表单</button>
-            </div>
             <div id="wizardProgress" class="wizard-progress" aria-label="录入步骤"></div>
+            <div class="view-switch" role="group" aria-label="录入模式">
+              <button type="button" class="active" data-form-mode="wizard">按步骤填写</button>
+              <button type="button" data-form-mode="single">查看全部</button>
+            </div>
           </div>
 
           <section id="templatePanel" class="template-panel hidden" aria-label="示例模板">
-            <div><strong>从一个真实场景开始</strong><span>模板只填入需求，不预设策略结论。</span></div>
+            <div><strong>示例模板</strong></div>
             <div id="templateList" class="template-list"></div>
           </section>
 
           <section class="form-section" data-step="0">
-            <div class="section-heading"><span>01</span><div><h3>产品事实</h3><p>只写已经确认的信息，卖点会从这里引用。</p></div></div>
+            <div class="section-heading"><span>01</span><div><h3>产品情况</h3></div></div>
             <div class="section-fields">
-              <label class="field-product">
-                产品或服务名称 <span class="required">必填</span>
-                <input id="productName" maxlength="100" required placeholder="例如：原味奶茶" aria-describedby="productNameError" />
-                <small class="field-meta"><span id="productNameError"></span><span data-counter="productName">0/100</span></small>
+              <label>
+                产品或服务名称 <span class="required" aria-label="必填">*</span>
+                <input id="productName" maxlength="100" required placeholder="填写产品名称" aria-describedby="productNameError" />
+                <small id="productNameError" class="field-error"></small>
               </label>
-              <label class="field-description">
-                产品介绍 <span class="required">必填</span>
-                <textarea id="productDescription" maxlength="5000" required placeholder="功能、特点、服务范围、可选规格等真实信息" aria-describedby="productDescriptionError"></textarea>
-                <small class="field-meta"><span id="productDescriptionError"></span><span data-counter="productDescription">0/5000</span></small>
+              <label>产品品类 <span class="required" aria-label="必填">*</span>
+                <select id="productCategory" required aria-describedby="productCategoryError"><option value="">请选择品类</option><option>食品饮料</option><option>美妆个护</option><option>数码科技</option><option>软件与在线服务</option><option>教育培训</option><option>旅游出行</option><option>本地生活服务</option><option>其他</option></select><small id="productCategoryError" class="field-error"></small>
               </label>
+              <label class="field-full">产品或服务具体提供什么 <span class="required" aria-label="必填">*</span>
+                <textarea id="productDescription" maxlength="1200" required aria-describedby="productDescriptionError" placeholder="填写产品或服务内容"></textarea>
+                <small id="productDescriptionError" class="field-error"></small>
+              </label>
+              <label class="field-full">已确认的产品特点与依据 <span class="required" aria-label="必填">*</span>
+                <textarea id="productFeatures" maxlength="800" required aria-describedby="productFeaturesError" placeholder="例如：可选择无糖或半糖；依据是当前菜单"></textarea>
+                <small id="productFeaturesError" class="field-error"></small>
+              </label>
+              <label>价格情况 <select id="priceStatus"><option value="unknown">暂未确定</option><option value="known">已确认价格</option></select></label>
+              <label data-show-field="priceStatus" data-show-value="known" class="hidden">已确认价格 <span class="required" aria-label="必填">*</span><input id="priceInfo" maxlength="100" placeholder="例如：12 元 / 杯，无其他优惠" aria-describedby="priceInfoError" /><small id="priceInfoError" class="field-error"></small></label>
+              <label>销售方式 <span class="required" aria-label="必填">*</span><select id="salesScope" required aria-describedby="salesScopeError"><option value="">请选择销售方式</option><option>线下门店</option><option>线上销售</option><option>线上与线下均可</option><option>预约或咨询服务</option><option>暂未确定</option></select><small id="salesScopeError" class="field-error"></small></label>
+              <label>销售或服务地区 <input id="salesRegion" maxlength="150" placeholder="例如：杭州某大学周边，或全国线上" /></label>
+              <label>购买或咨询入口 <select id="purchaseStatus"><option value="unknown">暂未确定</option><option value="known">已有明确入口</option></select></label>
+              <label data-show-field="purchaseStatus" data-show-value="known" class="hidden">具体入口 <span class="required" aria-label="必填">*</span><input id="purchaseEntry" maxlength="150" placeholder="例如：门店自取、官方小程序、预约表单" aria-describedby="purchaseEntryError" /><small id="purchaseEntryError" class="field-error"></small></label>
             </div>
           </section>
 
           <section class="form-section" data-step="1">
-            <div class="section-heading"><span>02</span><div><h3>目标与人群</h3><p>说明希望改变什么，以及最想影响谁。</p></div></div>
+            <div class="section-heading"><span>02</span><div><h3>目标与人群</h3></div></div>
             <div class="section-fields">
-              <label class="field-goal">
-                营销目标 <span class="required">必填</span>
-                <textarea id="marketingGoal" maxlength="500" required placeholder="例如：让附近大学生了解门店产品" aria-describedby="marketingGoalError"></textarea>
-                <small class="field-meta"><span id="marketingGoalError"></span><span data-counter="marketingGoal">0/500</span></small>
-              </label>
-              <div class="quick-options goal-options" aria-label="目标快捷选择">
-                <button type="button" data-goal="提升目标人群对产品的认知">提升认知</button>
-                <button type="button" data-goal="获取有明确兴趣的潜在客户">获取线索</button>
-                <button type="button" data-goal="推动目标人群完成咨询或购买转化">促进转化</button>
-              </div>
-              <label class="field-audience">
-                目标用户 <span class="optional">可留空，由智能体提出候选人群</span>
-                <textarea id="targetAudience" maxlength="1000" placeholder="例如：学校周边、关注性价比与口味选择的大学生"></textarea>
-                <small class="field-meta"><span></span><span data-counter="targetAudience">0/1000</span></small>
-              </label>
+              <label>首要营销目标 <span class="required" aria-label="必填">*</span><select id="primaryGoal" required aria-describedby="primaryGoalError"><option value="">请选择一个首要目标</option><option>建立产品认知</option><option>获取咨询线索</option><option>促进购买</option><option>推动试用</option><option>获取预约</option><option>其他</option></select><small id="primaryGoalError" class="field-error"></small></label>
+              <label>希望用户采取的行动 <span class="required" aria-label="必填">*</span><select id="desiredAction" required aria-describedby="desiredActionError"><option value="">请选择用户下一步行动</option><option>了解产品信息</option><option>到店了解或购买</option><option>线上购买</option><option>提交咨询</option><option>开始试用</option><option>提交预约</option><option>暂未确定</option><option>其他</option></select><small id="desiredActionError" class="field-error"></small></label>
+              <label class="field-full">目标补充 <textarea id="marketingGoal" maxlength="100" placeholder="例如：让附近大学生知道门店，并了解冷热、糖度选择" aria-describedby="marketingGoalError"></textarea><small id="marketingGoalError" class="field-error"></small></label>
+              <label class="field-full hidden" data-show-field="desiredAction" data-show-value="其他">具体用户行动 <span class="required" aria-label="必填">*</span><input id="actionDetail" maxlength="50" placeholder="希望用户做哪一个具体动作？" aria-describedby="actionDetailError" /><small id="actionDetailError" class="field-error"></small></label>
+              <label>目标人群情况 <span class="required" aria-label="必填">*</span><select id="audienceMode" required aria-describedby="audienceModeError"><option value="">请选择人群情况</option><option value="known">我有明确的目标人群</option><option value="assist">需要智能体帮助确定</option></select><small id="audienceModeError" class="field-error"></small></label>
+              <label>当前推广难题 <span class="required" aria-label="必填">*</span><select id="marketingProblem" required aria-describedby="marketingProblemError"><option value="">请选择主要难题</option><option>产品知名度不足</option><option>产品差异讲不清楚</option><option>咨询或线索较少</option><option>有兴趣但购买较少</option><option>新产品尚未推广</option><option>暂未确定</option><option>其他</option></select><small id="marketingProblemError" class="field-error"></small></label>
+              <label class="field-full hidden" data-show-field="audienceMode" data-show-value="known">已知目标人群 <span class="required" aria-label="必填">*</span><textarea id="targetAudience" maxlength="1000" placeholder="例如：门店附近大学生，主要在课后购买；来源为店员观察" aria-describedby="targetAudienceError"></textarea><small id="targetAudienceError" class="field-error"></small></label>
+              <label class="field-full">难题补充 <textarea id="problemDetail" maxlength="150" placeholder="例如：发过产品图片，但顾客仍反复询问怎么选" aria-describedby="problemDetailError"></textarea><small id="problemDetailError" class="field-error"></small></label>
             </div>
           </section>
 
           <section class="form-section" data-step="2">
-            <div class="section-heading"><span>03</span><div><h3>预算与周期</h3><p>可以留空；智能体不会凭空编造金额或日期。</p></div></div>
+            <div class="section-heading"><span>03</span><div><h3>执行条件</h3></div></div>
             <div class="section-fields">
-              <label class="field-budget-raw">
-                预算原始表达 <span class="optional">支持“五千块”“1.2万”等</span>
-                <input id="budgetRaw" maxlength="200" placeholder="例如：预算五千元" aria-describedby="budgetError" />
-                <small id="budgetParseHint" class="parse-hint">输入后会安全解析，无法确认时不会猜测。</small>
-              </label>
-              <label class="field-budget">
-                解析金额
-                <input id="budgetAmount" type="number" min="0" max="100000000" step="0.01" placeholder="可直接填写" aria-describedby="budgetError" />
-                <small id="budgetError" class="field-error"></small>
-              </label>
-              <label class="field-currency">
-                币种
-                <select id="currency">
-                  <option value="CNY">CNY 人民币</option>
-                  <option value="USD">USD 美元</option>
-                  <option value="EUR">EUR 欧元</option>
-                </select>
-              </label>
-              <div class="period-mode field-period-mode">
-                <span>推广周期</span>
-                <div class="view-switch" role="group" aria-label="周期填写方式">
-                  <button type="button" class="active" data-period-mode="duration">持续天数</button>
-                  <button type="button" data-period-mode="dates">起止日期</button>
-                </div>
+              <label>预算情况 <span class="required" aria-label="必填">*</span><select id="budgetMode" required aria-describedby="budgetModeError"><option value="">请选择预算情况</option><option value="amount">有明确预算</option><option value="zero">零预算，仅用已有资源</option><option value="unknown">暂未确定</option></select><small id="budgetModeError" class="field-error"></small></label>
+              <label>推广周期 <span class="required" aria-label="必填">*</span><select id="periodChoice" required aria-describedby="periodModeError"><option value="">请选择周期情况</option><option value="duration">按持续天数</option><option value="dates">按起止日期</option><option value="unknown">暂未确定</option></select><small id="periodModeError" class="field-error"></small></label>
+              <div class="field-full conditional-grid hidden" data-show-field="budgetMode" data-show-value="amount">
+                <label>预算金额 <span class="required" aria-label="必填">*</span><input id="budgetRaw" maxlength="200" placeholder="例如：预算五千元" aria-describedby="budgetParseHint budgetError" /><small id="budgetParseHint" class="parse-hint"></small></label>
+                <label>确认金额与币种 <span class="required" aria-label="必填">*</span><div class="amount-row"><input id="budgetAmount" type="number" min="0" max="100000000" step="0.01" placeholder="金额" aria-label="预算确认金额" aria-describedby="budgetError" /><select id="currency" aria-label="预算币种"><option value="CNY">人民币 CNY</option><option value="USD">美元 USD</option><option value="EUR">欧元 EUR</option></select></div><small id="budgetError" class="field-error"></small></label>
               </div>
-              <label class="field-duration" data-period-panel="duration">
-                持续天数
-                <input id="durationDays" type="number" min="1" max="365" placeholder="例如：30" aria-describedby="periodError" />
-              </label>
-              <div class="quick-options field-period-quick" data-period-panel="duration">
-                <button type="button" data-days="7">7 天</button><button type="button" data-days="30">30 天</button><button type="button" data-days="90">90 天</button>
-              </div>
-              <label class="field-start hidden" data-period-panel="dates">开始日期<input id="startDate" type="date" /></label>
-              <label class="field-end hidden" data-period-panel="dates">结束日期<input id="endDate" type="date" /></label>
-              <small id="periodError" class="field-error field-period-error"></small>
+              <label class="hidden" data-period-panel="duration">持续天数 <span class="required" aria-label="必填">*</span><input id="durationDays" type="number" min="1" max="365" placeholder="例如：30" aria-describedby="durationDaysError periodError" /><small id="durationDaysError" class="field-error"></small></label>
+              <div class="quick-options hidden" data-period-panel="duration"><button type="button" data-days="7">7 天</button><button type="button" data-days="30">30 天</button><button type="button" data-days="90">90 天</button></div>
+              <label class="hidden" data-period-panel="dates">开始日期 <span class="required" aria-label="必填">*</span><input id="startDate" type="date" aria-describedby="startDateError periodError" /><small id="startDateError" class="field-error"></small></label>
+              <label class="hidden" data-period-panel="dates">结束日期 <span class="required" aria-label="必填">*</span><input id="endDate" type="date" aria-describedby="endDateError periodError" /><small id="endDateError" class="field-error"></small></label>
+              <small id="periodError" class="field-error field-full"></small>
+              <label>已有渠道 <span class="required" aria-label="必填">*</span><select id="channelsState" required aria-describedby="channelsStateError"><option value="">请选择渠道情况</option><option value="known">已有可用渠道</option><option value="none">目前没有</option><option value="unknown">暂未确定</option></select><small id="channelsStateError" class="field-error"></small></label>
+              <label class="hidden" data-show-field="channelsState" data-show-value="known">已有渠道与可用情况 <span class="required" aria-label="必填">*</span><textarea id="existingChannels" maxlength="200" placeholder="例如：门店微信群，可自行发布；暂无运营数据" aria-describedby="existingChannelsError"></textarea><small id="existingChannelsError" class="field-error"></small></label>
+              <label>可用素材 <span class="required" aria-label="必填">*</span><select id="materialsState" required aria-describedby="materialsStateError"><option value="">请选择素材情况</option><option value="known">已有可用素材</option><option value="none">目前没有</option><option value="unknown">暂未确定</option></select><small id="materialsStateError" class="field-error"></small></label>
+              <label class="hidden" data-show-field="materialsState" data-show-value="known">可用素材清单 <span class="required" aria-label="必填">*</span><textarea id="availableMaterials" maxlength="150" placeholder="例如：产品实拍图、菜单图片，均为门店自有" aria-describedby="availableMaterialsError"></textarea><small id="availableMaterialsError" class="field-error"></small></label>
+              <label>执行人力 <span class="required" aria-label="必填">*</span><select id="teamState" required aria-describedby="teamStateError"><option value="">请选择人力情况</option><option value="known">已有执行人员</option><option value="none">目前没有</option><option value="unknown">暂未确定</option></select><small id="teamStateError" class="field-error"></small></label>
+              <label class="hidden" data-show-field="teamState" data-show-value="known">人员能做什么 <span class="required" aria-label="必填">*</span><textarea id="teamResources" maxlength="150" placeholder="例如：一名店员每天可用 30 分钟拍摄和回复咨询" aria-describedby="teamResourcesError"></textarea><small id="teamResourcesError" class="field-error"></small></label>
             </div>
           </section>
 
           <section class="form-section" data-step="3">
-            <div class="section-heading"><span>04</span><div><h3>约束与确认</h3><p>写清品牌口径、必选或禁选渠道、禁用表达。</p></div></div>
+            <div class="section-heading"><span>04</span><div><h3>限制与确认</h3></div></div>
             <div class="section-fields">
-              <label class="field-special">
-                特殊要求
-                <textarea id="specialRequirements" maxlength="2000" placeholder="例如：不虚构优惠；禁止某渠道；必须保留某种表达"></textarea>
-                <small class="field-meta"><span></span><span data-counter="specialRequirements">0/2000</span></small>
-              </label>
-              <div id="briefSummary" class="brief-summary"></div>
+              <label>特殊限制情况 <span class="required" aria-label="必填">*</span><select id="constraintStatus" required aria-describedby="constraintStatusError"><option value="">请选择限制情况</option><option value="known">有明确限制</option><option value="none">确认暂无额外限制</option><option value="unknown">暂未确定</option></select><small id="constraintStatusError" class="field-error"></small></label>
+              <label>品牌语气或参考方向 <input id="brandStyle" maxlength="100" placeholder="例如：亲切直接，不用夸张表达" /></label>
+              <label class="field-full hidden" data-show-field="constraintStatus" data-show-value="known">具体特殊限制 <span class="required" aria-label="必填">*</span><textarea id="specialRequirements" maxlength="500" placeholder="填写必须遵守的渠道、表达或执行要求" aria-describedby="specialRequirementsError"></textarea><small id="specialRequirementsError" class="field-error"></small></label>
+              <div class="field-full brief-review"><h4>提交前，确认这份需求</h4><div id="briefSummary" class="brief-summary"></div></div>
             </div>
           </section>
 
@@ -163,16 +136,16 @@
             <button id="wizardPrev" class="secondary-button" type="button">← 上一步</button>
             <p id="formMessage" class="form-message" role="status"></p>
             <button id="wizardNext" class="secondary-button" type="button">下一步 →</button>
-            <button id="submitButton" class="primary-button hidden" type="submit"><span>生成营销策略</span><span aria-hidden="true">→</span></button>
+            <button id="submitButton" class="primary-button hidden" type="submit"><span>确认需求，生成策略</span><span aria-hidden="true">→</span></button>
           </div>
         </form>
-        <section id="recentTasks" class="recent-tasks" aria-label="本地结果记录"></section>
+        <details class="recent-archive"><summary>查看最近生成的策略</summary><section id="recentTasks" class="recent-tasks" aria-label="本地结果记录"></section></details>
       </section>
 
-      <section id="resultPanel" class="panel result-panel" aria-live="polite">
+      <section id="resultPanel" class="panel result-panel hidden" aria-live="polite">
+        <button id="editRequirements" class="text-button back-to-brief" type="button">← 返回需求，继续编辑</button>
         <div class="panel-heading result-heading">
           <div>
-            <p class="step">02 智能体结果</p>
             <h2>策略方案</h2>
           </div>
           <div>
@@ -182,6 +155,7 @@
             <button id="exportCreative" class="text-button" type="button" disabled>交付创意请求</button>
           </div>
         </div>
+        <p id="resultMessage" class="form-message" role="status"></p>
         <ol id="workflow" class="workflow" aria-label="策略执行步骤">
           <li data-stage="generating"><span>01</span>需求分析与生成</li>
           <li data-stage="validating"><span>02</span>结构与约束校验</li>
@@ -213,7 +187,6 @@
         <div id="emptyState" class="empty-state">
           <div class="orb" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M10 5h10l5 5v17H7V5h3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M19 5v6h6M12 16h8M12 21h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
           <h3>你的下一份策略，从这里开始</h3>
-          <p>完成上方需求后，用户画像、产品定位、卖点与渠道方案将在这里呈现。</p>
         </div>
 
         <div id="loadingState" class="loading-state hidden">
@@ -228,7 +201,7 @@
             <div><span>建议分配预算</span><strong id="summaryBudget">—</strong></div>
             <div><span>待补充信息</span><strong id="summaryMissing">—</strong></div>
           </div>
-          <aside class="compliance-note"><strong>发布前复核</strong><span>请确认产品事实、品牌口径与适用法规；本结果不代表真实投放效果预测。</span></aside>
+
           <div class="result-tabs" role="tablist" aria-label="策略内容分组">
             <button type="button" role="tab" id="tabOverview" aria-selected="true" aria-controls="strategyOverview" data-result-tab="strategyOverview">策略概览</button>
             <button type="button" role="tab" id="tabActions" aria-selected="false" aria-controls="strategyActions" data-result-tab="strategyActions" tabindex="-1">卖点与渠道</button>
@@ -310,6 +283,7 @@
 
     </div>
     </div>
-    <script src="/app.js?v=20261008-neumorphism1" defer></script>
+    <script src="/brief.js?v=20261008-brief1" defer></script>
+    <script src="/app.js?v=20261008-clean1" defer></script>
   </body>
 </html>
