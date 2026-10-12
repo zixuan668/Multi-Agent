@@ -37,6 +37,8 @@ const document = {
 };
 const context = vm.createContext({document, Map, Number});
 vm.runInContext(fs.readFileSync(path.join(root,'web/brief.js'),'utf8'), context);
+vm.runInContext(fs.readFileSync(path.join(root,'web/examples.js'),'utf8'), context);
+vm.runInContext(fs.readFileSync(path.join(root,'web/presentation.js'),'utf8'), context);
 // Only omit page initialization/event wiring; renderer functions are unchanged.
 vm.runInContext(source.slice(0, source.indexOf('renderTemplates();restoreDraft();')), context);
 const issue = index => ({category:'quality', field:`channels[${index}].content_direction`, message:'已分配预算的渠道必须说明预算用于哪项具体执行动作'});
@@ -61,10 +63,11 @@ assert.equal(document.getElementById('diagnostics').open, true, 'failed records 
 document.getElementById('diagnostics').open = false;
 vm.runInContext('renderDiagnostics(task)', context);
 assert.equal(document.getElementById('diagnostics').open, false, 'refresh preserves user collapse');
-context.task = {status:'completed', attempt_diagnostics:[{attempt_count:1, duration_ms:100, error_code:null, issues:[]}]};
+context.task = {status:'completed', attempt_diagnostics:[{attempt_count:1, duration_ms:100, error_code:null, issues:[],syntax_repairs:['补齐末尾闭合标点（不补字段或值）']}]};
 vm.runInContext('renderDiagnostics(task)', context);
 assert.match(timeline.text, /校验通过/);
 assert.match(timeline.text, /未发现阻断问题/);
+assert.match(timeline.text, /本地结构修复 · 未改写产品事实/);
 context.task = {status:'failed', attempt_diagnostics:[{attempt_count:1, error_code:'MODEL_TIMEOUT', issues:[]}]};
 vm.runInContext('renderDiagnostics(task)', context);
 assert.match(timeline.text, /模型响应超时/);

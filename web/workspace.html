@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="智策营销策略智能体" />
     <title>智策营销策略智能体</title>
-    <link rel="stylesheet" href="/styles.css?v=20261008-heros1" />
+    <link rel="stylesheet" href="/styles.css?v=20261012-decision2" />
   </head>
   <body>
     <div class="app-shell">
@@ -159,7 +159,7 @@
         <ol id="workflow" class="workflow" aria-label="策略执行步骤">
           <li data-stage="generating"><span>01</span>需求分析与生成</li>
           <li data-stage="validating"><span>02</span>结构与约束校验</li>
-          <li data-stage="reviewing"><span>03</span>策略编辑与复核</li>
+          <li data-stage="reviewing"><span>03</span>质量与事实审查</li>
           <li data-stage="completed"><span>04</span>策略交付</li>
         </ol>
         <section id="failureState" class="failure-state hidden" role="status">
@@ -203,60 +203,53 @@
           </div>
 
           <div class="result-tabs" role="tablist" aria-label="策略内容分组">
-            <button type="button" role="tab" id="tabOverview" aria-selected="true" aria-controls="strategyOverview" data-result-tab="strategyOverview">策略概览</button>
-            <button type="button" role="tab" id="tabActions" aria-selected="false" aria-controls="strategyActions" data-result-tab="strategyActions" tabindex="-1">卖点与渠道</button>
-            <button type="button" role="tab" id="tabEvidence" aria-selected="false" aria-controls="strategyEvidence" data-result-tab="strategyEvidence" tabindex="-1">假设与信息缺口</button>
+            <button type="button" role="tab" id="tabOverview" aria-selected="true" aria-controls="strategyOverview" data-result-tab="strategyOverview">决策与执行</button>
+            <button type="button" role="tab" id="tabActions" aria-selected="false" aria-controls="strategyActions" data-result-tab="strategyActions" tabindex="-1">渠道与创意任务</button>
+            <button type="button" role="tab" id="tabEvidence" aria-selected="false" aria-controls="strategyEvidence" data-result-tab="strategyEvidence" tabindex="-1">依据与待确认</button>
           </div>
           <div id="strategyOverview" class="tab-content" role="tabpanel" aria-labelledby="tabOverview">
           <article class="result-card accent-card">
-            <p class="card-label">产品定位</p>
+            <div class="plan-context"><strong id="planProduct"></strong><span id="planGoal"></span></div>
+            <p class="card-label">01 · 本轮营销选择</p>
             <h3 id="positioning"></h3>
           </article>
 
-          <div class="result-grid">
-            <article class="result-card">
-              <p class="card-label">目标用户</p>
-              <h3 id="audienceSegment"></h3>
-              <div class="audience-facts"><span>年龄 <strong id="audienceAge">未提供 / 待验证</strong></span><span>职业 <strong id="audienceOccupation">未提供 / 待验证</strong></span></div>
-              <p id="audienceBasis" class="muted"></p>
-              <div class="mini-section">
-                <strong>需求</strong>
-                <ul id="audienceNeeds"></ul>
-              </div>
-              <div class="mini-section">
-                <strong>痛点</strong>
-                <ul id="audiencePainPoints"></ul>
-              </div>
-            </article>
-
-            <article class="result-card">
-              <p class="card-label">营销主题</p>
-              <h3 id="strategyTheme"></h3>
-              <div class="mini-section">
-                <strong>内容方向</strong>
-                <ul id="contentDirections"></ul>
-              </div>
-              <div class="mini-section">
-                <strong>推广方式</strong>
-                <ul id="promotionMethods"></ul>
-              </div>
-            </article>
-          </div>
-
+          <article class="result-card first-action-card">
+            <p class="card-label">02 · 先做这一件事</p>
+            <p id="firstAction"></p>
+          </article>
+          <article class="result-card">
+            <p class="card-label">03 · 后续步骤与反馈检查</p>
+            <ol id="promotionMethods" class="execution-steps" start="2"></ol>
+          </article>
           </div>
           <div id="strategyActions" class="tab-content hidden" role="tabpanel" aria-labelledby="tabActions">
           <article class="result-card">
-            <div class="card-title-row"><p class="card-label">核心卖点与原文依据</p><button type="button" class="module-copy" data-copy-module="selling">复制卖点</button></div>
-            <div id="sellingPoints" class="item-list"></div>
+            <p class="card-label">交给创意的核心命题</p>
+            <h3 id="strategyTheme"></h3>
+            <ul id="contentDirections" class="creative-tasks"></ul>
           </article>
-
           <article class="result-card">
-            <div class="card-title-row"><p class="card-label">推荐渠道</p><button type="button" class="module-copy" data-copy-module="channels">复制渠道</button></div>
+            <div class="card-title-row"><p class="card-label">各渠道如何分工</p><button type="button" class="module-copy" data-copy-module="channels">复制渠道</button></div>
             <div id="budgetSummary" class="budget-summary hidden"></div>
             <div id="channels" class="item-list"></div>
           </article>
           </div>
           <div id="strategyEvidence" class="tab-content hidden" role="tabpanel" aria-labelledby="tabEvidence">
+          <article class="result-card">
+            <div class="card-title-row"><p class="card-label">核心卖点与原文依据</p><button type="button" class="module-copy" data-copy-module="selling">复制卖点</button></div>
+            <div id="sellingPoints" class="item-list"></div>
+          </article>
+          <article class="result-card">
+            <p class="card-label">目标用户 · 需求与障碍属于规划判断</p>
+            <h3 id="audienceSegment"></h3>
+            <div class="audience-facts"><span>年龄 <strong id="audienceAge">未提供 / 待验证</strong></span><span>职业 <strong id="audienceOccupation">未提供 / 待验证</strong></span></div>
+            <p id="audienceBasis" class="muted"></p>
+            <div class="result-grid audience-detail">
+              <div class="mini-section"><strong>要解决的需求</strong><ul id="audienceNeeds"></ul></div>
+              <div class="mini-section"><strong>影响行动的障碍</strong><ul id="audiencePainPoints"></ul></div>
+            </div>
+          </article>
           <div class="result-grid notes-grid">
             <article class="result-card note-card">
               <p class="card-label">待验证假设</p>
@@ -283,7 +276,9 @@
 
     </div>
     </div>
-    <script src="/brief.js?v=20261008-brief1" defer></script>
-    <script src="/app.js?v=20261008-clean1" defer></script>
+  <script src="/brief.js?v=20261012-decision2" defer></script>
+  <script src="/examples.js?v=20261012-decision2" defer></script>
+  <script src="/presentation.js?v=20261012-decision2" defer></script>
+  <script src="/app.js?v=20261012-decision2" defer></script>
   </body>
 </html>

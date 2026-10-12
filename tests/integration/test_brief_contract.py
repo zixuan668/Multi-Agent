@@ -27,4 +27,6 @@ class BriefContractTests(unittest.TestCase):
         self.assertIn("门店微信群", prompt.user)
         self.assertIn("12 元 / 杯", prompt.user)
         self.assertIn("none=确认没有", prompt.system)
+        self.assertNotIn("【智策需求补充 v1】", prompt.user)
+        self.assertIn('"resources"', prompt.user)
         self.assertEqual(prompt.request.schema_version, "1.0")

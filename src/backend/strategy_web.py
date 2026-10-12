@@ -18,6 +18,8 @@ from uuid import uuid4
 from src.agents.strategy.errors import ContractValidationError, StrategyAgentError, ConfigurationError
 from src.agents.strategy.model_clients import CompatibleModelClient, RuleBasedModelClient
 from src.agents.strategy.models import StrategyRequest, MarketingRequirements
+from src.agents.strategy.validation import VALIDATION_VERSION
+from src.agents.strategy.configuration import implementation_fingerprint
 from src.agents.strategy.service import StrategyAgent
 from .tasks import TaskStore
 
@@ -55,8 +57,10 @@ class StrategyApplication:
         self.real_model_configured = provider == "compatible"
         model_client = model_client or (CompatibleModelClient.from_env() if provider == "compatible" else RuleBasedModelClient())
         self.agent = StrategyAgent(model_client)
-        config = {"provider": provider, "model": getattr(model_client, "model", "offline-rule-based"), "timeout_seconds": getattr(model_client, "timeout_seconds", 60), "temperature": getattr(model_client, "temperature", None), "prompt_version": self.agent.prompt_builder.version, "prompt_sha256": self.agent.prompt_builder.sha256, "validation_version": "strategy-rules-v5-editorial", "semantic_review": hasattr(model_client, "review_strategy"), "strategy_editor": hasattr(model_client, "refine_strategy"), "max_rounds": 3, "pass_threshold": 80, "scoring_rule_version": "equal-weight-v1", "max_attempts": 3}
-        config["config_version"] = hashlib.sha256(json.dumps(config, sort_keys=True).encode()).hexdigest()[:16]
+        config = {"provider": provider, "model": getattr(model_client, "model", "offline-rule-based"), "timeout_seconds": getattr(model_client, "timeout_seconds", 60), "temperature": getattr(model_client, "temperature", None), "prompt_version": self.agent.prompt_builder.version, "prompt_sha256": self.agent.prompt_builder.sha256, "validation_version": VALIDATION_VERSION, "implementation_sha256": implementation_fingerprint(), "semantic_review": hasattr(model_client, "assess_strategy") or hasattr(model_client, "review_strategy"), "strategy_quality_review": hasattr(model_client, "assess_strategy"), "strategy_editor": hasattr(model_client, "refine_strategy") and not hasattr(model_client, "assess_strategy"), "strategy_editor_version": getattr(model_client, "editor_version", None), "max_rounds": 3, "pass_threshold": 80, "scoring_rule_version": "equal-weight-v1", "max_attempts": 3}
+        config["reasoning_effort"] = getattr(model_client, "reasoning_effort", None)
+        config["assessment_prompt_sha256"] = getattr(model_client, "assessment_prompt_sha256", None)
+        config["config_version"] = hashlib.sha256(json.dumps({k:v for k,v in config.items() if k != "config_version"}, sort_keys=True).encode()).hexdigest()[:16]
         self.config_version = config["config_version"]
         self.tasks = TaskStore(self.agent, config)
         self._sessions = {}
@@ -81,6 +85,8 @@ class StrategyApplication:
             "status": "ok",
             "agent": "strategy",
             "schema_version": "1.0",
+            "prompt_version": self.agent.prompt_builder.version,
+            "validation_version": VALIDATION_VERSION,
             "provider": self.provider_name,
             "real_model_configured": self.real_model_configured,
             "connection_verified": False,

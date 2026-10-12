@@ -9,6 +9,7 @@ from pathlib import Path
 
 from .models import StrategyRequest
 from .constraints import extract_constraints
+from .intake import normalized_brief, unpack
 
 
 @dataclass(frozen=True)
@@ -21,7 +22,7 @@ class ModelPrompt:
 class PromptBuilder:
     def __init__(self, template_path: Path | None = None):
         root = Path(__file__).resolve().parents[3]
-        self.template_path = template_path or root / "prompts" / "strategy" / "v1.5.txt"
+        self.template_path = template_path or root / "prompts" / "strategy" / "v1.10.txt"
         self.system_prompt = self.template_path.read_text(encoding="utf-8")
         self.version = self.template_path.stem
         self.sha256 = hashlib.sha256(self.system_prompt.encode("utf-8")).hexdigest()
@@ -35,12 +36,13 @@ class PromptBuilder:
         previous_raw_output: str | None = None,
     ) -> ModelPrompt:
         request_json = json.dumps(
-            request.to_dict(attempt_count=attempt_count),
+            {"brief": normalized_brief(request.requirements.to_dict()),
+             "feedback": request.to_dict()["feedback"], "previous_result": request.to_dict()["previous_result"]},
             ensure_ascii=False,
             indent=2,
         )
         correction = ""
-        constraints = extract_constraints(request.requirements.special_requirements)
+        constraints = extract_constraints(unpack(request.requirements.special_requirements)[0])
         constraint_json = json.dumps({"required_channels": constraints.required_channels, "forbidden_channels": constraints.forbidden_channels, "forbidden_content": constraints.forbidden_content, "conflicts": constraints.conflicts, "original_clauses": constraints.clauses}, ensure_ascii=False)
         if validation_feedback:
             correction = (

@@ -11,6 +11,7 @@ const payload = brief.payload(fixture);
 assert.deepEqual(Object.keys(payload).sort(),['product_name','product_description','marketing_goal','target_audience','budget','campaign_period','special_requirements','budget_raw'].sort());
 assert.ok(payload.product_description.includes(fixture.productFeatures),'literal feature evidence survives quotes and newlines');
 assert.ok(payload.product_description.includes(fixture.productDescription));
+assert.ok(brief.unpack(payload.product_description).base.includes('已确认价格：12 元 / 杯'),'confirmed price is visible evidence, not only hidden metadata');
 assert.ok(payload.special_requirements.startsWith(fixture.specialRequirements));
 assert.ok(payload.special_requirements.includes('店员每天可投入 30 分钟'));
 assert.deepEqual(payload.budget,{amount:5000,currency:'CNY'});
@@ -68,6 +69,8 @@ const elements=new Map(ids.map(id=>[id,new Element()]));
 const document={getElementById:id=>elements.get(id)||null,querySelectorAll:()=>[],querySelector:()=>null,createElement:()=>new Element()};
 const context=vm.createContext({document,Map,Number});
 vm.runInContext(fs.readFileSync(path.join(root,'web/brief.js'),'utf8'),context);
+vm.runInContext(fs.readFileSync(path.join(root,'web/examples.js'),'utf8'),context);
+vm.runInContext(fs.readFileSync(path.join(root,'web/presentation.js'),'utf8'),context);
 const script=fs.readFileSync(path.join(root,'web/app.js'),'utf8');
 vm.runInContext(script.slice(0,script.indexOf('renderTemplates();restoreDraft();')),context);
 function setValues(values){for(const id of brief.fields)elements.get(id).value=String(values[id]??'');context.choice=values.periodMode||'';vm.runInContext('periodMode=choice',context);}

@@ -3,6 +3,7 @@
 此目录预留给创意负责人，当前尚无业务实现，不提供可运行入口。
 
 - 对接与职责：[02 创意说明](../../../docs/02-creative-agent.md)。
+- 开工资料：[创意对接说明书](../../../docs/02-creative-handoff-guide.md)；[12 份联调样例](../../../tests/fixtures/creative/README.md)。
 - 提示词：[`prompts/creative/`](../../../prompts/creative/)。
 - 协作方式：[团队协作规范](../../../docs/team-collaboration.md)。
 

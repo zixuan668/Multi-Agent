@@ -18,15 +18,9 @@ const legacyDraftKey = "strategyRequirementDraft.v2";
 const archiveKey = "strategyResultArchive.v1";
 const draftFields = StrategyBrief.fields;
 const textLimits = {productName:100,productDescription:1200,productFeatures:800,marketingGoal:100,targetAudience:1000,specialRequirements:500};
-const stageNames = {queued: "排队中", pending: "排队中", generating: "生成策略草案", validating: "结构与约束校验", reviewing: "策略编辑与事实复核", retrying: "自动修复 / 技术重试", completed: "策略完成（尚未评估）", failed: "未完成", interrupted: "服务中断"};
+const stageNames = {queued: "排队中", pending: "排队中", generating: "形成营销选择", validating: "检查结构与执行条件", reviewing: "审查策略质量与事实", retrying: "按问题修复策略", completed: "策略完成（尚未评估）", failed: "未完成", interrupted: "服务中断"};
 
-const templates = [
-  {id:"ai", name:"AI 学习产品", note:"订阅制学习助手", values:{productName:"知问 AI 学习助手", productDescription:"提供错题整理、知识点问答与学习计划功能，支持网页端和移动端使用。", marketingGoal:"让准备职业考试的在职学习者了解产品并开始试用", targetAudience:"准备职业资格考试、每天可用学习时间有限的在职人群", durationDays:"30", budgetRaw:"预算 2 万元", specialRequirements:"不承诺通过考试；不虚构提分数据；突出辅助学习而非替代教师"}},
-  {id:"tea", name:"奶茶门店", note:"到店认知场景", values:{productName:"原味奶茶", productDescription:"门店提供热饮和冷饮，可选择无糖或半糖，支持到店自取。", marketingGoal:"让附近大学生了解门店产品并产生到店兴趣", targetAudience:"门店附近的大学生", durationDays:"30", budgetRaw:"五千块", specialRequirements:"不虚构优惠；不承诺健康或减肥效果"}},
-  {id:"watch", name:"智能手表", note:"新品功能沟通", values:{productName:"跃动智能手表 S2", productDescription:"支持心率趋势记录、睡眠时长记录、运动模式记录和手机消息提醒，续航最长 7 天。", marketingGoal:"建立新品认知，帮助用户理解核心功能与适用场景", targetAudience:"有日常运动和健康记录习惯的城市上班族", durationDays:"21", budgetRaw:"3 万元人民币", specialRequirements:"健康数据仅作日常参考，不作医疗诊断；不得使用医疗效果承诺"}},
-  {id:"beauty", name:"护肤产品", note:"成分与场景表达", values:{productName:"清润保湿精华", productDescription:"含透明质酸钠与泛醇，质地清爽，适合日常保湿使用；规格为 30ml。", marketingGoal:"让关注基础保湿的人群理解产品成分与使用场景", targetAudience:"关注日常保湿、偏好清爽肤感的年轻消费者", durationDays:"28", budgetRaw:"预算一万二", specialRequirements:"不使用治疗、修复疾病、永久改善等表达；不虚构临床数据"}},
-  {id:"travel", name:"旅游产品", note:"目的地内容种草", values:{productName:"周末古镇轻旅行", productDescription:"提供两天一夜小团行程，包含往返交通、住宿和古镇讲解服务；出发地为杭州。", marketingGoal:"获取对周末短途旅行有兴趣的咨询线索", targetAudience:"杭州及周边希望周末短途放松的上班族", durationDays:"14", budgetRaw:"8000 元", specialRequirements:"价格以实际出发日期为准；不承诺零购物或固定天气；必须说明包含项目"}}
-];
+const templates = StrategyExamples.templates;
 
 function setList(id, values, emptyText = "无") {
   const list = $(id);
@@ -109,6 +103,13 @@ function renderDiagnostics(task) {
     title.append(textElement("span", String(record.attempt_count), "diagnostic-number"), textElement("h3", index === 0 ? "首次生成 · 校验结果" : `第 ${index} 次自动修复 · 校验结果`));
     header.append(title, textElement("span", passed ? "校验通过" : ({OUTPUT_INVALID:"未通过校验", MODEL_TIMEOUT:"模型响应超时", MODEL_UNAVAILABLE:"模型服务不可用", MODEL_AUTH_FAILED:"模型鉴权失败"}[record.error_code] || "处理失败"), `diagnostic-outcome ${passed ? "success" : "warning"}`));
     section.appendChild(header);
+    const repairs = [...(record.syntax_repairs || []), ...(record.review_syntax_repairs || [])];
+    if (repairs.length) {
+      const repairBlock = textElement("div", "", "diagnostic-issue");
+      repairBlock.appendChild(textElement("strong", "本地结构修复 · 未改写产品事实"));
+      [...new Set(repairs)].forEach(value => repairBlock.appendChild(textElement("p", value)));
+      section.appendChild(repairBlock);
+    }
     if (groups.length) groups.forEach(({issue, locations, fields}) => {
       const card = textElement("div", "", "diagnostic-issue");
       const label = {fact:"事实依据", constraint:"需求约束", structure:"输出格式", quality:"内容完整性"}[issue.category] || "内容检查";
@@ -185,11 +186,6 @@ function fillTemplate(id) {
   if (!template) return;
   draftFields.forEach(field => { $(field).value = StrategyBrief.defaults[field]; });
   Object.entries(template.values).forEach(([key, value]) => { $(key).value = value; });
-  const category = {ai:"软件与在线服务",tea:"食品饮料",watch:"数码科技",beauty:"美妆个护",travel:"旅游出行"};
-  const goal = {ai:"推动试用",tea:"建立产品认知",watch:"建立产品认知",beauty:"建立产品认知",travel:"获取咨询线索"};
-  const action = {ai:"开始试用",tea:"到店了解或购买",watch:"了解产品信息",beauty:"了解产品信息",travel:"提交咨询"};
-  const values = {productCategory:category[id],productFeatures:template.values.productDescription,primaryGoal:goal[id],desiredAction:action[id],audienceMode:"known",marketingProblem:"暂未确定",salesScope:id === "tea" ? "线下门店" : "暂未确定",budgetMode:"amount",channelsState:"unknown",materialsState:"unknown",teamState:"unknown",constraintStatus:"known"};
-  Object.entries(values).forEach(([key,value]) => { $(key).value = value; });
   parseBudgetInput();
   periodMode = "duration";
   wizardStep = 0; formMode = "wizard";
@@ -366,7 +362,23 @@ function showWorkspaceView(view, scroll = false) {
 function formattedStrategy(response = latestResponse) {
   if (!response?.data) return "";
   const d = response.data;
-return [`${latestTask?.requirements?.product_name || $("productName").value.trim() || "产品"}｜营销策略`,"","一、策略定位",d.positioning,"","二、目标用户",d.target_audience.segment,`依据：${d.target_audience.basis}`,...d.target_audience.needs.map(v=>`- 需求：${v}`),...d.target_audience.pain_points.map(v=>`- 痛点：${v}`),"","三、核心卖点",...d.selling_points.flatMap((p,i)=>[`${i+1}. ${p.claim}`,`   依据原文：${p.source_quote}`]),"","四、渠道策略",...d.channels.flatMap((c,i)=>[`${i+1}. ${c.name}${c.allocated_amount==null?"":`｜${c.allocated_amount} ${latestTask?.requirements?.budget?.currency||""}`}`,`   为什么：${c.reason}`,`   发布什么：${c.content_direction}`]),"","五、推广策略",`主题：${d.marketing_strategy.theme}`,...d.marketing_strategy.content_directions.map(v=>`- 内容方向：${v}`),...d.marketing_strategy.promotion_methods.map(v=>`- 执行动作：${v}`),"","六、发布前需核实",...(d.assumptions.length?d.assumptions.map(v=>`- 假设：${v}`):["- 无待验证假设"]),...(d.missing_information.length?d.missing_information.map(v=>`- 信息缺口：${v}`):["- 无信息缺口"]),...d.constraint_conflicts.map(v=>`- 约束冲突：${v}`)].join("\n");
+  const clean = StrategyPresentation.clean;
+  const requirement = latestTask?.requirements;
+  return [
+    `${requirement?.product_name || $("productName").value.trim() || "产品"}｜营销策略`,"",
+    "一、本轮营销选择",d.positioning,"",
+    "二、执行顺序与反馈检查",...d.marketing_strategy.promotion_methods.map((v,i)=>`${i+1}. ${v}`),"",
+    "三、渠道分工与预算",...d.channels.flatMap((c,i)=>[
+      `${i+1}. ${c.name}｜${StrategyPresentation.budget(c,requirement?.budget?.amount,requirement?.budget?.currency || "")}`,
+      `   为什么选择：${clean(c.reason)}`,
+      ...StrategyPresentation.sections(c.content_direction,["内容","发布","行动","前提","预算用途"]).map(p=>`   ${p.label ? p.label+"：" : ""}${p.text}`),
+    ]),"",
+    "四、创意制作任务",`核心命题：${d.marketing_strategy.theme}`,...d.marketing_strategy.content_directions.map((v,i)=>`${i+1}. ${v}`),"",
+    "五、产品事实与人群依据",...d.selling_points.flatMap((p,i)=>[`${i+1}. ${p.claim}`,`   原文：${p.source_quote}`]),
+    `目标人群：${d.target_audience.segment}`,`依据：${d.target_audience.basis}`,
+    ...d.target_audience.needs.map(v=>`- 需求判断：${clean(v)}`),...d.target_audience.pain_points.map(v=>`- 障碍判断：${clean(v)}`),"",
+    "六、假设与待确认",...d.assumptions.map(v=>`- 假设：${clean(v)}`),...d.missing_information.map(v=>`- 信息缺口：${v}`),...d.constraint_conflicts.map(v=>`- 约束冲突：${v}`),
+  ].join("\n");
 }
 
 function renderResult(response) {
@@ -379,17 +391,27 @@ function renderResult(response) {
   const allocated = amounts.reduce((sum, channel) => sum + channel.allocated_amount, 0);
   const total = latestTask?.requirements?.budget?.amount;
   $("summaryChannels").textContent = `${data.channels.length} 个`;
-  $("summaryBudget").textContent = amounts.length ? `${allocated.toLocaleString("zh-CN")} ${currency}` : "尚未分配";
+  $("summaryBudget").textContent = total === 0 ? "零预算" : amounts.length ? `${allocated.toLocaleString("zh-CN")} ${currency}` : "尚未估算";
   $("summaryMissing").textContent = `${data.missing_information.length} 项`;
   if (latestTask?.config_snapshot?.provider === "compatible") setModeBadge({real_model_configured:true,connection_verified:true});
   $("positioning").textContent = data.positioning;
+  const goal = StrategyBrief.unpack(latestTask?.requirements?.marketing_goal || "").detail;
+  $("planGoal").textContent = goal?.primaryGoal || StrategyBrief.unpack(latestTask?.requirements?.marketing_goal || "").base || "本轮营销目标";
+  $("planProduct").textContent = latestTask?.requirements?.product_name || $("productName").value;
+  $("firstAction").textContent = data.marketing_strategy.promotion_methods[0];
   $("audienceSegment").textContent = data.target_audience.segment;
   $("audienceAge").textContent = data.target_audience.age_range || "未提供 / 待验证";
   $("audienceOccupation").textContent = data.target_audience.occupation || "未提供 / 待验证";
   $("audienceBasis").textContent = data.target_audience.basis;
-  setList("audienceNeeds",data.target_audience.needs); setList("audiencePainPoints",data.target_audience.pain_points);
+  setList("audienceNeeds",data.target_audience.needs.map(StrategyPresentation.clean)); setList("audiencePainPoints",data.target_audience.pain_points.map(StrategyPresentation.clean));
   $("strategyTheme").textContent = data.marketing_strategy.theme;
-  setList("contentDirections",data.marketing_strategy.content_directions); setList("promotionMethods",data.marketing_strategy.promotion_methods);
+  $("contentDirections").replaceChildren(...data.marketing_strategy.content_directions.map((value,index) => {
+    const card = textElement("li","","creative-task");
+    card.append(textElement("strong","创意任务 " + (index+1)));
+    appendStructured(card,value,["方向","依据","形式","行动"]);
+    return card;
+  }));
+  setList("promotionMethods",data.marketing_strategy.promotion_methods.slice(1), "本轮没有其他步骤");
   setList("assumptions",data.assumptions); setList("missingInformation",data.missing_information); setList("constraintConflicts",data.constraint_conflicts);
   $("conflictCard").classList.toggle("hidden", !data.constraint_conflicts.length);
 
@@ -406,8 +428,10 @@ function renderResult(response) {
   data.channels.forEach((channel,index) => {
     const card=textElement("div","","list-item"), title=textElement("strong",`${index+1}. ${channel.name}`);
     title.appendChild(textElement("span","策略判断","inference-badge"));
-    const budget=channel.allocated_amount==null?"预算：待预算明确后分配":`预算：${channel.allocated_amount.toLocaleString("zh-CN")} ${currency}`;
-    card.append(title,textElement("p",`为什么适合：${channel.reason}`),textElement("p",`发布什么：${channel.content_direction}`),textElement("p",budget));
+    const budget=StrategyPresentation.budget(channel,total,currency);
+    card.append(title,textElement("p",StrategyPresentation.clean(channel.reason),"channel-reason"));
+    appendStructured(card,channel.content_direction,["内容","发布","行动","前提","预算用途"]);
+    card.append(textElement("p",budget,"channel-budget"));
     if(channel.allocated_amount!=null&&total>0){const track=textElement("div","","budget-track"),fill=textElement("span","","budget-fill");fill.style.width=`${Math.min(100,channel.allocated_amount/total*100)}%`;track.appendChild(fill);card.appendChild(track);}
     $("channels").appendChild(card);
   });
@@ -416,6 +440,17 @@ function renderResult(response) {
   $("rawJson").textContent=JSON.stringify(response,null,2);
   $("emptyState").classList.add("hidden"); $("loadingState").classList.add("hidden"); $("failureState").classList.add("hidden"); $("resultContent").classList.remove("hidden");
   ["copyResult","exportStrategy","exportResult","exportCreative"].forEach(id=>{$(id).disabled=false;});
+}
+
+function appendStructured(host,value,labels) {
+  const parts = StrategyPresentation.sections(value,labels);
+  const list = document.createElement("dl"); list.className = "strategy-detail";
+  parts.forEach(part => {
+    const row = document.createElement("div");
+    if(part.label) row.append(textElement("dt",part.label));
+    row.append(textElement("dd",part.text)); list.append(row);
+  });
+  host.append(list);
 }
 
 function locateSource(quote) {

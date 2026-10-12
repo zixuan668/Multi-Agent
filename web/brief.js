@@ -22,7 +22,7 @@ const StrategyBrief = (() => {
   const contextIds = ["audienceMode", "marketingProblem", "problemDetail", "channelsState", "existingChannels", "materialsState", "availableMaterials", "teamState", "teamResources", "constraintStatus", "brandStyle"];
   function payload(values) {
     const v = {...defaults, ...values};
-    const facts = `${text(v,"productDescription")}\n\n已确认的产品特点：\n${text(v,"productFeatures")}`;
+    const facts = `${text(v,"productDescription")}\n\n已确认的产品特点：\n${text(v,"productFeatures")}${v.priceStatus === "known" && text(v,"priceInfo") ? `\n\n已确认价格：${text(v,"priceInfo")}` : ""}`;
     const product = {formVersion:1, ...pick(v, productIds), priceInfo:v.priceStatus === "known" ? text(v,"priceInfo") : "", purchaseEntry:v.purchaseStatus === "known" ? text(v,"purchaseEntry") : ""};
     const goal = v.primaryGoal === "其他" ? text(v,"marketingGoal") : v.primaryGoal;
     const action = v.desiredAction === "其他" ? text(v,"actionDetail") : v.desiredAction;
