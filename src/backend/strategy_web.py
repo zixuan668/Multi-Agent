@@ -22,6 +22,8 @@ from src.agents.strategy.validation import VALIDATION_VERSION
 from src.agents.strategy.configuration import implementation_fingerprint
 from src.agents.strategy.service import StrategyAgent
 from .tasks import TaskStore
+from .creative_workspace import CreativeWorkspace
+from .creative_web import dispatch as creative_dispatch
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -50,7 +52,7 @@ def build_request_payload(raw: dict[str, Any]) -> dict[str, Any]:
 
 
 class StrategyApplication:
-    def __init__(self, provider="compatible", model_client=None) -> None:
+    def __init__(self, provider="compatible", model_client=None, *, creative_client=None, creative_provider="disabled", creative_demo=False) -> None:
         if provider not in ("compatible", "offline"):
             raise ConfigurationError("provider 必须为 compatible 或显式 offline")
         self.provider_name = provider
@@ -63,6 +65,7 @@ class StrategyApplication:
         config["config_version"] = hashlib.sha256(json.dumps({k:v for k,v in config.items() if k != "config_version"}, sort_keys=True).encode()).hexdigest()[:16]
         self.config_version = config["config_version"]
         self.tasks = TaskStore(self.agent, config)
+        self.creative = CreativeWorkspace(self.tasks, creative_client, enabled=creative_provider == "compatible" or creative_client is not None, demo=creative_demo)
         self._sessions = {}
         self._session_lock = threading.Lock()
 
@@ -128,6 +131,8 @@ def make_handler(application: StrategyApplication):
             super().end_headers()
 
         def do_GET(self) -> None:
+            if creative_dispatch(self, application, "GET"):
+                return
             path = urlparse(self.path).path
             if path == "/api/health":
                 self._json(HTTPStatus.OK, application.health())
@@ -160,6 +165,8 @@ def make_handler(application: StrategyApplication):
             super().do_GET()
 
         def do_POST(self) -> None:
+            if creative_dispatch(self, application, "POST"):
+                return
             path = urlparse(self.path).path
             if path not in ("/api/strategy", "/api/tasks"):
                 self._json(HTTPStatus.NOT_FOUND, {"error": "not_found"})
@@ -236,10 +243,11 @@ def make_handler(application: StrategyApplication):
     return StrategyRequestHandler
 
 
-def create_server(host: str = "127.0.0.1", port: int = 8000, *, provider="compatible", model_client=None) -> ThreadingHTTPServer:
-    application = StrategyApplication(provider, model_client)
+def create_server(host: str = "127.0.0.1", port: int = 8000, *, provider="compatible", model_client=None, creative_client=None, creative_provider="disabled", creative_demo=False) -> ThreadingHTTPServer:
+    application = StrategyApplication(provider, model_client, creative_client=creative_client, creative_provider=creative_provider, creative_demo=creative_demo)
     class Server(ThreadingHTTPServer):
         def server_close(self):
+            application.creative.close()
             application.tasks.close()
             super().server_close()
     return Server((host, port), make_handler(application))
@@ -250,9 +258,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8000)
     parser.add_argument("--provider", choices=("compatible", "offline"), default="compatible")
+    parser.add_argument("--creative-provider", choices=("compatible", "disabled"), default="compatible")
+    parser.add_argument("--creative-demo", action="store_true", help="Enable explicitly labelled development-only C feedback")
     args = parser.parse_args(argv)
     try:
-        server = create_server(args.host, args.port, provider=args.provider)
+        server = create_server(args.host, args.port, provider=args.provider, creative_provider=args.creative_provider, creative_demo=args.creative_demo)
     except ConfigurationError as exc:
         print(f"{exc.code}: {exc}")
         return 2

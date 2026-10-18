@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zhice.example/internal/evaluation-request.internal.schema.json",
+  "$comment": "Candidate for C integration; actual C authentication and scoring are not implemented",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "task_id",
+    "requirements",
+    "strategy",
+    "creative",
+    "round_no",
+    "evaluation_status",
+    "feedback_trace"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "b-to-c-internal-candidate-v1"
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "requirements": {
+      "$ref": "https://zhice.example/contracts/strategy-request.schema.json#/properties/requirements"
+    },
+    "strategy": {
+      "$ref": "https://zhice.example/contracts/strategy-response.schema.json"
+    },
+    "creative": {
+      "$ref": "https://zhice.example/internal/creative-result.internal.schema.json"
+    },
+    "round_no": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3
+    },
+    "evaluation_status": {
+      "const": "pending"
+    },
+    "feedback_trace": {
+      "type": "array"
+    }
+  }
+}

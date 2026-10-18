@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="智策营销 · 创意智能体交互原型 V5" />
+<title>智策营销 · 广告创意智能体</title>
+<link rel="stylesheet" href="/creative.css?v=6">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="brand-mark">策</span><span>智策营销</span></div>
+  <nav class="topnav" aria-label="智能体流程导航">
+    <button data-nav="strategy" class="current">策略方案</button>
+    <button data-nav="creative">创意工作台</button>
+    <button data-nav="evaluation">评估交付</button>
+  </nav>
+  <div class="mode-badge">真实模型 · C 尚未评估</div>
+</header>
+<main class="shell">
+  <section class="page-head"><div><h1 id="pageTitle">策略结果 → 创意交付</h1></div><p class="page-note" id="pageNote">把 A 的已确认策略作为 B 的唯一上游输入，并保留完整版本链。</p></section>
+  <section class="flowbar" aria-label="完整信息流">
+    <div class="flow-step done active" data-flow="strategy"><span class="flow-num">A</span><span class="flow-copy"><strong>策略智能体</strong><small>策略已完成</small></span></div><span class="flow-arrow"></span>
+    <div class="flow-step" data-flow="creative"><span class="flow-num">B</span><span class="flow-copy"><strong>创意智能体</strong><small id="flowBText">等待接收策略</small></span></div><span class="flow-arrow"></span>
+    <div class="flow-step" data-flow="evaluation"><span class="flow-num">C</span><span class="flow-copy"><strong>效果评估</strong><small id="flowCText">等待创意结果</small></span></div>
+  </section>
+
+  <section id="view-strategy" class="view"><div class="panel" id="strategySummary"></div></section>
+<section id="view-transfer" class="view hidden">
+    <div class="panel transfer-panel">
+      <div class="transfer-wrap">
+        <div class="transfer-orb" aria-hidden="true"></div>
+        <h2 id="transferTitle">创意智能体正在接收策略</h2>
+        <p id="transferDescription">正在读取当前任务、核对策略来源，并整理本轮创意简报。</p>
+        <ul class="workflow" id="transferWorkflow">
+          <li><span>01 · RECEIVE</span><b>接收上游任务</b><small>读取 requirements、task_id 与完整 strategy 响应。</small></li>
+          <li><span>02 · LOCK</span><b>锁定策略来源</b><small>确认 strategy_result_id / version，防止跨版本混用。</small></li>
+          <li><span>03 · BRIEF</span><b>提炼创意简报</b><small>整理受众、卖点、渠道、行动入口和禁止事项。</small></li>
+          <li><span>04 · READY</span><b>准备创意工作区</b><small>建立本轮生成上下文，等待创意智能体正式工作。</small></li>
+        </ul>
+        <div class="transfer-meter"><i id="transferMeter"></i></div><div class="transfer-foot" id="transferFoot" aria-live="polite">正在建立安全的 A → B 上下文…</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-creative" class="view hidden">
+    <div class="panel">
+      <div class="panel-head"><div><h2>广告创意智能体</h2><p>依据 A 的策略发展渠道创意；不重写定位、预算或目标人群，也不替 C 做评分结论。</p></div><div class="v6-inline-0"><span class="chip purple" id="creativeRoundChip">创意版本 v1</span><span class="chip good">策略来源已锁定</span><span class="chip purple hidden" id="humanEditChip">人工编辑 0</span></div></div>
+      <div class="creative-layout focused-layout">
+        
+        <div class="creative-main"><div class="export-controls" id="exportControls"></div>
+          
+          <div id="feedbackArea" class="feedback-card hidden">
+            <header><div><h3 id="feedbackTitle">来自效果评估智能体的退回任务</h3><p id="feedbackIntro" class="v6-inline-1">C 已完成评估，本轮不修改策略，只要求 B 对指定创意字段做定向修订。</p></div><span class="chip warn">退回 B 修改</span></header>
+            <div class="feedback-summary"><div class="feedback-metric"><span>evaluation_id</span><b id="feedbackEvalId">—</b></div><div class="feedback-metric"><span>当前 creative</span><b id="feedbackCreative">—</b></div><div class="feedback-metric"><span>策略版本</span><b>锁定策略版本 · 保持锁定</b></div></div>
+            <p id="feedbackIssue"><b>问题：</b>—</p>
+            <p id="feedbackRequirement"><b>修改要求：</b>—</p>
+            <span class="feedback-path" id="feedbackPath">target_agent: creative</span>
+            <div class="feedback-targets" id="feedbackTargets"></div>
+            <div class="feedback-actions"><small id="feedbackFootText">开始修改后会创建新版本，不覆盖历史结果。</small><button class="btn primary" id="startRevisionBtn">按反馈开始修改　→</button></div>
+          </div>
+          <div id="revisionShell" class="revision-shell hidden">
+            <div class="revision-head"><div><h3 id="revisionTitle">创意修订过程</h3><p id="revisionDescription">根据 C 的反馈定向修改被点名的字段；未被反馈的内容与 A 的策略上下文保持锁定。</p></div><div class="revision-state" id="revisionState" aria-live="polite"><i></i><span>等待开始</span></div></div>
+            <ul class="revision-workflow" id="revisionWorkflow">
+              <li><span>01 · RECEIVE</span><b>接收评估反馈</b><small id="revReceiveNote">确认 feedback 属于当前 task 与当前 creative。</small></li>
+              <li><span>02 · LOCATE</span><b>定位修改字段</b><small id="revLocateNote">只处理 C 明确指出的字段。</small></li>
+              <li><span>03 · LOCK</span><b>锁定策略与事实</b><small id="revLockNote">锁定策略版本、卖点、预算和渠道不允许被改写。</small></li>
+              <li><span>04 · REVISE</span><b>生成修订内容</b><small id="revReviseNote">围绕本轮反馈定向优化表达。</small></li>
+              <li><span>05 · VERIFY</span><b>整理修订结果</b><small id="revVerifyNote">整理本次修改，准备交付。</small></li>
+            </ul>
+            <div class="revision-meter"><i id="revisionMeter"></i></div>
+            <div class="revision-foot"><span id="revisionFoot">等待开始处理 C 的反馈…</span><b id="revisionPercent">0%</b></div>
+            <div id="revisionDiff" class="revision-diff hidden"><div class="diff-card"><small id="diffBeforeLabel">BEFORE</small><b>社群主文案</b><p id="diffBeforeText">—</p></div><div class="diff-arrow">→</div><div class="diff-card after"><small id="diffAfterLabel">AFTER</small><b id="diffAfterTitle">修订结果</b><p id="diffAfterText">—</p></div></div>
+            <div id="revisionNote" class="revision-note hidden"><span id="revisionNoteText">—</span><span class="chip good" id="revisionNoteChip">新版本已创建</span></div>
+          </div>
+          <div class="brief-card creative-brief"><div class="brief-title"><strong>创意简报</strong></div><div class="channel-picker"><span>选择创作渠道</span><div class="channel-tabs" id="channelTabs"></div></div><div class="brief-grid" id="briefGrid"></div></div><div class="coauthor-card">
+            <div class="coauthor-head"><div><h3>创意补充要求</h3></div></div>
+            <textarea id="creativeInstruction" class="brief-input" placeholder="补充语气、表达方向或已有句子；不能修改 A 的策略。" maxlength="2000"></textarea>
+            <div class="quick-prompts"><button class="quick-prompt" data-prompt="语气自然直接">语气自然直接</button><button class="quick-prompt" data-prompt="突出已确认卖点">突出已确认卖点</button><button class="quick-prompt" data-prompt="只使用已确认入口">只使用已确认入口</button><button class="quick-prompt" data-prompt="精简表达">精简表达</button></div>
+            <div class="coauthor-foot"><button class="btn ghost" id="clearInstruction">清空补充要求</button></div>
+          </div>
+          <div class="action-row"><div class="action-left"><button class="btn primary" id="generateBtn">生成本渠道创意　→</button><button class="btn" id="regenerateBtn" disabled>重新生成</button></div><div class="generator-status" id="generatorStatus" aria-live="polite"><i></i><span>等待生成</span></div></div>
+
+          <div id="generationShell" class="revision-shell generation-shell hidden">
+            <div class="revision-head"><div><h3 id="generationTitle">渠道创意生成过程</h3><p id="generationDescription">正在根据策略生成本渠道的广告创意。</p></div><div class="revision-state" id="generationState" aria-live="polite"><i></i><span>等待开始</span></div></div>
+            <ul class="revision-workflow" id="generationWorkflow">
+              <li><span>01 · READ</span><b>读取策略上下文</b><small>读取目标受众、卖点、source_quote、预算与约束。</small></li>
+              <li><span>02 · CHANNEL</span><b>确认渠道任务</b><small>明确当前渠道的内容角色、行动入口和资源边界。</small></li>
+              <li><span>03 · CREATE</span><b>生成四类创意</b><small>分别形成主文案、核心短句、海报文字与短视频脚本。</small></li>
+              <li><span>04 · GUARD</span><b>整理生成内容</b><small>整理四类创意的文字内容。</small></li>
+              <li><span>05 · READY</span><b>整理结构化结果</b><small>写入 creative 版本信息并准备人工编辑与 C 交付。</small></li>
+            </ul>
+            <div class="revision-meter"><i id="generationMeter"></i></div>
+            <div class="revision-foot"><span id="generationFoot">等待开始生成渠道创意…</span><b id="generationPercent">0%</b></div>
+          </div>
+
+          <div class="creative-result-shell">
+            <div class="creative-tabs" role="tablist" aria-label="创意结果类型">
+              <button role="tab" data-tab="copy" aria-selected="true">社群主文案<small>COPY</small></button>
+              <button role="tab" data-tab="slogan" aria-selected="false">核心短句<small>SLOGAN</small></button>
+              <button role="tab" data-tab="poster" aria-selected="false">海报文字<small>POSTER</small></button>
+              <button role="tab" data-tab="video" aria-selected="false">短视频脚本<small>VIDEO</small></button>
+            </div>
+            <div class="creative-pane">
+              <article class="creative-pane-card" data-pane="copy"><div class="creative-pane-head"><div><small>COPY · 广告文案</small><h3>社群主文案</h3></div><div class="pane-actions"><button class="pane-action" data-copy="copyOutput">复制</button><button class="pane-action edit" data-action="edit" data-field="copy" disabled>手动编辑</button><button class="pane-action ai" data-action="polish" data-field="copy" disabled>基于当前润色</button><button class="pane-action ai" data-action="regen-one" data-field="copy" disabled>仅重生成本项</button></div></div><div id="copyOutput" class="creative-output placeholder">尚未生成。点击“生成本渠道创意”。</div><textarea id="copyEditor" class="creative-editor hidden" aria-label="编辑社群主文案"></textarea><div class="edit-actions hidden" id="copyEditActions"><span>保存后更新当前创意，策略内容保持不变。</span><div><button class="btn" data-cancel-edit="copy">取消</button><button class="btn primary" data-save-edit="copy">保存人工修改</button></div></div><div class="field-process hidden" id="copyProcess"><i></i><span>处理中…</span></div><div class="edit-history" id="copyHistory"><span class="edit-history-label">EDIT TRACE</span><span class="history-tag">AI 初稿待生成</span></div><div class="creative-meta">待生成并校验</div></article>
+              <article class="creative-pane-card hidden" data-pane="slogan"><div class="creative-pane-head"><div><small>SLOGAN · 宣传口号</small><h3>核心短句</h3></div><div class="pane-actions"><button class="pane-action" data-copy="sloganOutput">复制</button><button class="pane-action edit" data-action="edit" data-field="slogan" disabled>手动编辑</button><button class="pane-action ai" data-action="polish" data-field="slogan" disabled>基于当前润色</button><button class="pane-action ai" data-action="regen-one" data-field="slogan" disabled>仅重生成本项</button></div></div><div id="sloganOutput" class="creative-output placeholder">尚未生成。生成完成后可在这里查看核心短句。</div><textarea id="sloganEditor" class="creative-editor hidden" aria-label="编辑核心短句"></textarea><div class="edit-actions hidden" id="sloganEditActions"><span>保存后更新当前创意，策略内容保持不变。</span><div><button class="btn" data-cancel-edit="slogan">取消</button><button class="btn primary" data-save-edit="slogan">保存人工修改</button></div></div><div class="field-process hidden" id="sloganProcess"><i></i><span>处理中…</span></div><div class="edit-history" id="sloganHistory"><span class="edit-history-label">EDIT TRACE</span><span class="history-tag">AI 初稿待生成</span></div><div class="creative-meta">待生成并校验</div></article>
+              <article class="creative-pane-card hidden" data-pane="poster"><div class="creative-pane-head"><div><small>POSTER · 海报文字创意</small><h3>标题与画面文案</h3></div><div class="pane-actions"><button class="pane-action" data-copy="posterOutput">复制</button><button class="pane-action edit" data-action="edit" data-field="poster" disabled>手动编辑</button><button class="pane-action ai" data-action="polish" data-field="poster" disabled>基于当前润色</button><button class="pane-action ai" data-action="regen-one" data-field="poster" disabled>仅重生成本项</button></div></div><div id="posterOutput" class="creative-output placeholder">尚未生成。生成完成后可在这里查看海报文字方案。</div><textarea id="posterEditor" class="creative-editor hidden" aria-label="编辑标题与画面文案"></textarea><div class="edit-actions hidden" id="posterEditActions"><span>保存后更新当前创意，策略内容保持不变。</span><div><button class="btn" data-cancel-edit="poster">取消</button><button class="btn primary" data-save-edit="poster">保存人工修改</button></div></div><div class="field-process hidden" id="posterProcess"><i></i><span>处理中…</span></div><div class="edit-history" id="posterHistory"><span class="edit-history-label">EDIT TRACE</span><span class="history-tag">AI 初稿待生成</span></div><div class="creative-meta">待生成并校验</div></article>
+              <article class="creative-pane-card hidden" data-pane="video"><div class="creative-pane-head"><div><small>VIDEO · 短视频文字脚本</small><h3>15–60 秒脚本</h3></div><div class="pane-actions"><button class="pane-action" data-copy="videoOutput">复制</button><button class="pane-action edit" data-action="edit" data-field="video" disabled>手动编辑</button><button class="pane-action ai" data-action="polish" data-field="video" disabled>基于当前润色</button><button class="pane-action ai" data-action="regen-one" data-field="video" disabled>仅重生成本项</button></div></div><div id="videoOutput" class="creative-output placeholder">尚未生成。生成完成后可在这里查看分镜与旁白。</div><textarea id="videoEditor" class="creative-editor hidden" aria-label="编辑15–60 秒脚本"></textarea><div class="edit-actions hidden" id="videoEditActions"><span>保存后更新当前创意，策略内容保持不变。</span><div><button class="btn" data-cancel-edit="video">取消</button><button class="btn primary" data-save-edit="video">保存人工修改</button></div></div><div class="field-process hidden" id="videoProcess"><i></i><span>处理中…</span></div><div class="edit-history" id="videoHistory"><span class="edit-history-label">EDIT TRACE</span><span class="history-tag">AI 初稿待生成</span></div><div class="creative-meta">待生成并校验</div></article>
+            </div>
+          </div>
+
+          <div class="delivery-ready delivery-compact"><h3 id="deliveryTitle">交付检查智能体</h3><button class="btn primary" id="packageBtn" disabled>检查并交付效果评估智能体 →</button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-evaluation" class="view hidden">
+    <div class="panel"><div class="panel-head"><div><h2>效果评估交付</h2><p id="evaluationSubtitle">B 的创意已经进入 C 的输入队列；这里保留任务、策略与创意版本引用，避免评估错版本。</p></div><span class="chip good" id="evaluationChip">B → C 已交付</span></div><div class="delivered-state"><div class="big-check" id="evaluationIcon">✓</div><h3 id="evaluationTitle">创意结果已交付效果评估智能体</h3><p id="evaluationBody">C 将接收原始需求、对应策略结果和当前创意结果，并在五维评分、事实风险与渠道约束检查后给出通过、修改或停止建议。</p><div class="version-chain v6-inline-2"><span>—</span><i>→</i><span>锁定策略版本</span><i>→</i><span id="evalCreativeVersion">creative v1</span><i>→</i><span id="evalRoundState">evaluation round 1 pending</span></div><div class="delivered-actions" id="evaluationActions"><button class="btn" id="backFromEvaluation">返回创意工作台</button><button class="btn warning" id="simulateReject">模拟 C 打回修改　↩</button><button class="btn primary success" id="simulatePass">模拟 C 评估通过　✓</button></div></div></div>
+  </section>
+</main>
+
+<div id="handoffModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="handoffTitle">
+  <div class="modal handoff-simple">
+    <button class="modal-close" id="closeHandoff" aria-label="关闭">×</button>
+    <div class="handoff-hero">
+      <h2 id="handoffTitle">把策略交给创意智能体</h2>
+      <p class="handoff-description">确认本次产品需求与策略，开始创作广告内容。</p>
+      <div class="agent-bridge"><div class="agent-node from"><small>营销策略智能体</small><strong>策略方案已完成</strong></div><div class="bridge-line"><span class="bridge-arrow">→</span></div><div class="agent-node to"><small>广告创意智能体</small><strong>准备接收策略</strong></div></div>
+    </div>
+    <div class="modal-body">
+      <div class="handoff-summary-card"><div class="checks"></div></div>
+      <div class="modal-actions"><span class="chip good">4 / 4 项检查通过</span><div class="right"><button class="btn" id="cancelHandoff">返回策略</button><button class="btn primary" id="acceptHandoff">确认交付，开始创作 →</button></div></div>
+    </div>
+  </div>
+</div>
+<div id="cHandoffModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="cHandoffTitle">
+<div class="modal handoff-simple"><button class="modal-close" id="closeCHandoff" aria-label="关闭">×</button>
+<div class="handoff-hero"><h2 id="cHandoffTitle">把创意交给检查智能体</h2><p class="handoff-description" id="cHandoffDesc">确认创意已准备好，继续下一步。</p>
+<div class="agent-bridge"><div class="agent-node from"><small>广告创意智能体</small><strong id="cBridgeCreative">创意已准备</strong></div><div class="bridge-line"><span class="bridge-arrow">→</span></div><div class="agent-node to"><small>效果评估智能体</small><strong>等待接收创意</strong></div></div></div>
+<div class="modal-body"><div class="handoff-summary-card"><div class="checks" id="creativeDeliveryChecks"></div></div><div class="modal-actions"><span class="chip good" id="creativeDeliveryCount">4 / 4 项准备完成</span><div class="right"><button class="btn" id="cancelCHandoff">继续修改</button><button class="btn primary" id="deliverCBtn">确认交付 →</button></div></div></div></div></div>
+<div id="issueModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="issueTitle"><div class="modal issue-modal"><h2 id="issueTitle">请先完成以下调整</h2><div id="issueMessages"></div><button class="btn primary" id="confirmIssues">确定，返回检查</button></div></div>
+<div class="toast" id="toast"></div>
+<script src="/creative-api.js?v=6" defer></script><script src="/creative.js?v=6" defer></script></body></html>
