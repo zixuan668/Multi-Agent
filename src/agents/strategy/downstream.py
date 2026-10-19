@@ -21,12 +21,14 @@ def validate_creative_request(payload: dict) -> dict:
     response = StrategyResponse.from_dict(payload["strategy"], task_id=payload["task_id"])
     if response.value["status"] != "succeeded":
         raise ContractValidationError("创意输入不能使用失败策略")
+    if response.value["round_no"] != 1:
+        raise ContractValidationError("创意首轮请求不能引用其他轮次的策略")
     MarketingRequirements.from_dict(payload["requirements"])
     check = deepcopy(payload)
     check.update(agent="strategy", strategy=None)
     strategy_request = StrategyRequest.from_dict(check)
     issues = validate_business_rules(StrategyData.from_dict(response.value["data"]), strategy_request)
-    issues.extend(item["message"] for item in validate_strategy_quality(StrategyData.from_dict(response.value["data"]), strategy_request))
+    issues.extend(item["message"] for item in validate_strategy_quality(StrategyData.from_dict(response.value["data"]), strategy_request) if item["severity"] == "blocking")
     if issues:
         raise ContractValidationError(issues)
     return deepcopy(payload)

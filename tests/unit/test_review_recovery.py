@@ -75,33 +75,37 @@ class ClassifiedReviewTests(unittest.TestCase):
         self.assertEqual(client.calls, 1)
         self.assertEqual(agent.traces(self.req.task_id)[0]["discarded_fields"], ["marketing_strategy_note"])
 
-    def test_incomplete_channel_execution_detail_is_rejected_as_quality_gap(self):
+    def test_placeholder_output_blocks_delivery_and_retries(self):
         weak = valid_data()
         weak["channels"][0]["content_direction"] = "介绍产品"
         client = ScriptedClient([json.dumps(weak, ensure_ascii=False)] * 3)
         agent = StrategyAgent(client, sleeper=lambda _: None)
         result = agent.generate(self.req).to_dict()
         self.assertEqual(result["status"], "failed")
+        self.assertEqual(client.calls, 3)
         issue = agent.traces(self.req.task_id)[0]["issues"][0]
         self.assertEqual(issue["field"], "channels[0].content_direction")
         self.assertEqual((issue["category"], issue["severity"]), ("quality", "blocking"))
 
-    def test_default_prompt_builds_strategic_choices_v14(self):
+    def test_default_prompt_builds_strategic_choices_and_intake_context_v15(self):
         builder = PromptBuilder()
-        self.assertEqual(builder.version, "v1.4")
-        self.assertIn("形成多个方向", builder.system_prompt)
-        self.assertIn("一份有价值的策略必须做出选择", builder.system_prompt)
+        self.assertEqual(builder.version, "v1.10")
+        self.assertIn("product_evidence_text", builder.system_prompt)
+        self.assertIn("known=已确认", builder.system_prompt)
+        self.assertIn("内部比较方向", builder.system_prompt)
+        self.assertIn("帮用户做选择", builder.system_prompt)
 
-    def test_provided_budget_must_be_fully_assigned_with_purpose(self):
+    def test_budget_can_leave_reserve_and_purpose_hint_is_advisory(self):
         weak = valid_data()
         weak["channels"][0]["allocated_amount"] = 600
         weak["channels"][0]["content_direction"] = weak["channels"][0]["content_direction"].replace("；预算用途：用于产品素材制作和发布准备", "")
         agent = StrategyAgent(ScriptedClient([json.dumps(weak, ensure_ascii=False)] * 3), sleeper=lambda _: None)
         result = agent.generate(self.req).to_dict()
-        self.assertEqual(result["status"], "failed")
-        messages = [item["message"] for item in agent.traces(self.req.task_id)[0]["issues"]]
-        self.assertTrue(any("等于输入总预算" in message for message in messages))
-        self.assertTrue(any("说明预算用于" in message for message in messages))
+        self.assertEqual(result["status"], "succeeded")
+        self.assertEqual(result["attempt_count"], 1)
+        messages = [item["message"] for item in agent.traces(self.req.task_id)[0]["review_notes"]]
+        self.assertFalse(any("等于输入总预算" in message for message in messages))
+        self.assertTrue(any("执行用途" in message for message in messages))
 
     def test_repair_freezes_unaffected_fields_and_channels(self):
         original = valid_data()

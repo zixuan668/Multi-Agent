@@ -1,0 +1,83 @@
+{
+  "schema_version": "1.0",
+  "task_id": "guided-milk-owned",
+  "agent": "creative",
+  "round_no": 1,
+  "attempt_count": 1,
+  "requirements": {
+    "product_name": "原味奶茶",
+    "product_description": "提供冷热奶茶，支持到店自取。\n\n已确认的产品特点：\n可选择无糖或半糖。\n\n【智策需求补充 v1】\n{\"formVersion\":1,\"productCategory\":\"食品饮料\",\"productDescription\":\"提供冷热奶茶，支持到店自取。\",\"productFeatures\":\"可选择无糖或半糖。\",\"priceStatus\":\"known\",\"priceInfo\":\"12 元 / 杯\",\"salesScope\":\"线下门店\",\"salesRegion\":\"大学周边\",\"purchaseStatus\":\"known\",\"purchaseEntry\":\"门店现场点单\"}",
+    "marketing_goal": "首要目标：建立产品认知\n希望用户采取的行动：到店了解或购买\n目标补充：了解糖度选择并到店点单\n\n【智策需求补充 v1】\n{\"formVersion\":1,\"primaryGoal\":\"建立产品认知\",\"marketingGoal\":\"了解糖度选择并到店点单\",\"desiredAction\":\"到店了解或购买\",\"actionDetail\":\"\"}",
+    "target_audience": "附近大学生",
+    "budget": {
+      "amount": 1000,
+      "currency": "CNY"
+    },
+    "campaign_period": {
+      "duration_days": 14
+    },
+    "special_requirements": "不虚构优惠、认证、销量或效果承诺\n\n【智策需求补充 v1】\n{\"formVersion\":1,\"audienceMode\":\"known\",\"marketingProblem\":\"产品差异讲不清楚\",\"problemDetail\":\"\",\"channelsState\":\"known\",\"existingChannels\":\"门店微信群，门店有管理员发布权限\",\"materialsState\":\"known\",\"availableMaterials\":\"自有菜单和产品实拍图\",\"teamState\":\"known\",\"teamResources\":\"店员每天可投入 30 分钟\",\"constraintStatus\":\"known\",\"brandStyle\":\"清楚直接\"}",
+    "budget_raw": "1000 CNY"
+  },
+  "strategy": {
+    "schema_version": "1.0",
+    "task_id": "guided-milk-owned",
+    "agent": "strategy",
+    "round_no": 2,
+    "attempt_count": 1,
+    "status": "succeeded",
+    "result_id": "strategy-5bbf4382bc564435ab9a5c4799311fc2",
+    "version": 1,
+    "data": {
+      "target_audience": {
+        "segment": "附近大学生",
+        "needs": [
+          "待验证假设：在了解或比较原味奶茶时，判断“提供冷热奶茶，支持到店自取”是否符合自身需要"
+        ],
+        "pain_points": [
+          "待验证假设：如果“提供冷热奶茶，支持到店自取”没有被清楚呈现，可能难以判断原味奶茶是否值得进一步了解"
+        ],
+        "age_range": null,
+        "occupation": "大学生",
+        "basis": "用户明确指定目标人群为附近大学生"
+      },
+      "positioning": "面向附近大学生，在了解和比较产品的决策情境中，以“提供冷热奶茶，支持到店自取”这一已知特点呈现原味奶茶，服务“首要目标：建立产品认知\n希望用户采取的行动：到店了解或购买\n目标补充：了解糖度选择并到店点单\n\n【智策需求补充 v1】\n{\"formVersion\":1,\"primaryGoal\":\"建立产品认知\",\"marketingGoal\":\"了解糖度选择并到店点单\",\"desiredAction\":\"到店了解或购买\",\"actionDetail\":\"\"}”",
+      "selling_points": [
+        {
+          "claim": "提供冷热奶茶，支持到店自取",
+          "source_quote": "提供冷热奶茶，支持到店自取"
+        }
+      ],
+      "channels": [
+        {
+          "name": "门店自有社群",
+          "reason": "待验证假设：原味奶茶可围绕“提供冷热奶茶，支持到店自取”制作可核对的产品信息；选择门店自有社群是为了向附近大学生传达这些信息并服务“首要目标：建立产品认知\n希望用户采取的行动：到店了解或购买\n目标补充：了解糖度选择并到店点单\n\n【智策需求补充 v1】\n{\"formVersion\":1,\"primaryGoal\":\"建立产品认知\",\"marketingGoal\":\"了解糖度选择并到店点单\",\"desiredAction\":\"到店了解或购买\",\"actionDetail\":\"\"}”，实际适配程度需验证",
+          "content_direction": "内容：制作围绕“提供冷热奶茶，支持到店自取”的产品介绍；发布：以图文或短内容形式通过门店自有社群发布并引导了解产品；执行前核实：确认发布权限、可用素材与产品信息仍然有效；预算用途：用于内容素材制作、发布准备和小范围验证，不代表渠道市场报价",
+          "allocated_amount": 1000.0
+        }
+      ],
+      "marketing_strategy": {
+        "theme": "用可核对的产品信息帮助附近大学生了解原味奶茶",
+        "content_directions": [
+          "内容主张：原味奶茶提供“提供冷热奶茶，支持到店自取”；事实依据：“提供冷热奶茶，支持到店自取”；表现形式：产品信息图文或短视频；行动引导：进一步了解或咨询产品信息"
+        ],
+        "promotion_methods": [
+          "执行动作：准备产品信息素材，通过门店自有社群发布并记录真实反馈；核实：发布权限、素材准确性和渠道规则"
+        ]
+      },
+      "assumptions": [
+        "附近大学生会关注“提供冷热奶茶，支持到店自取”所表达的产品信息，此判断需通过真实反馈验证"
+      ],
+      "missing_information": [
+        "执行前需确认门店自有社群的账号或发布权限，以及可使用的原味奶茶产品素材"
+      ],
+      "constraint_conflicts": []
+    },
+    "error": null,
+    "created_at": "2026-10-12T04:08:32.773226Z"
+  },
+  "creative": null,
+  "feedback": [],
+  "previous_result": null,
+  "config_version": "synthetic-offline-handoff-v1"
+}
