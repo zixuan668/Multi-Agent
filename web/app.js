@@ -185,9 +185,12 @@ function fillTemplate(id) {
   const template = templates.find(item => item.id === id);
   if (!template) return;
   draftFields.forEach(field => { $(field).value = StrategyBrief.defaults[field]; });
-  Object.entries(template.values).forEach(([key, value]) => { $(key).value = value; });
+  Object.entries(template.values).forEach(([key, value]) => {
+    // periodMode is application state; its visible control is periodChoice.
+    if (key !== 'periodMode') $(key).value = value;
+  });
   parseBudgetInput();
-  periodMode = "duration";
+  periodMode = template.values.periodMode || "duration";
   wizardStep = 0; formMode = "wizard";
   updateFormUi();
   saveDraft();

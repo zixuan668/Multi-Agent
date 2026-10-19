@@ -78,6 +78,14 @@ class CreativeTests(unittest.TestCase):
         with self.assertRaises(CreativeError):receive(h)
     def test_first_generation_real_references(self):
         v=self.generated();self.assertEqual(v['strategy_result_id'],self.tasks.h['strategy']['result_id']);self.assertEqual(v['round_no'],1);self.assertEqual(v['version'],1)
+    def test_model_receives_current_content_without_repeated_edit_history(self):
+        previous=self.generated();original=deepcopy(previous)
+        self.runop('refine',path='items[0].copy')
+        wire=self.p.calls[-1]['previous']
+        self.assertNotIn('edit_trace',wire)
+        self.assertEqual(wire['data'],original['data'])
+        self.assertEqual(wire['result_id'],original['result_id'])
+        self.assertEqual(self.state()['versions'][0],original)
         self.assertEqual(self.p.calls[0]['strategy'],self.tasks.h['strategy'])
     def test_context_and_strategy_are_immutable(self):
         original=deepcopy(self.tasks.h);v=self.generated();self.runop('edit',path='items[0].slogan',value='按需选择')
@@ -90,7 +98,7 @@ class CreativeTests(unittest.TestCase):
         old=deepcopy(v['data']);old['items'][0]['slogan']=new['data']['items'][0]['slogan'];self.assertEqual(old,new['data'])
         call=next(c for c in self.p.calls if c.get('action')=='regenerate');self.assertEqual(call['allowed_paths'],['items[0].slogan'])
     def test_refine_uses_current_content(self):
-        v=self.generated();self.runop('refine',path='items[0].slogan');call=next(c for c in self.p.calls if c.get('action')=='refine');self.assertEqual(call['previous'],v)
+        v=self.generated();self.runop('refine',path='items[0].slogan');call=next(c for c in self.p.calls if c.get('action')=='refine');self.assertEqual(call['previous']['data'],v['data']);self.assertEqual(call['previous']['result_id'],v['result_id']);self.assertEqual(call['previous']['version'],v['version'])
     def test_scope_violation_rejected(self):
         self.generated();original=self.p.call
         def wrong(system,data):

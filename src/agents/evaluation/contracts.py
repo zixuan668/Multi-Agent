@@ -85,8 +85,9 @@ def resolve_path(request, path):
 
 
 def validate_feedback(items, request, *, records=False):
-    if not isinstance(items, list) or len(items) > 100:
-        raise ContractError("feedback", "须为反馈数组，最多100项")
+    limit=300 if records else 100
+    if not isinstance(items, list) or len(items) > limit:
+        raise ContractError("feedback", f"须为反馈数组，最多{limit}项")
     names = {"target_agent", "target_path", "issue", "suggestion", "priority"}
     if records:
         names |= {"feedback_id", "evaluation_id", "resolved"}
@@ -100,7 +101,13 @@ def validate_feedback(items, request, *, records=False):
         canonical = item["target_path"].replace(".data.", ".", 1)
         if not canonical.startswith(item["target_agent"] + "."):
             raise ContractError(path + ".target_path", "反馈归属与字段路径不一致")
-        resolve_path(request, canonical)
+        if records:
+            # Historical positions belong to the source version, whose channels
+            # may differ from the new strategy. Validate syntax, not new bounds.
+            if not re.fullmatch(r'(strategy|creative)\.[A-Za-z_]\w*(?:\[\d+\]|\.[A-Za-z_]\w*)*',canonical):
+                raise ContractError(path+'.target_path','历史反馈位置格式非法')
+        else:
+            resolve_path(request, canonical)
         if records and type(item["resolved"]) is not bool:
             raise ContractError(path + ".resolved", "须为布尔值")
 
@@ -122,10 +129,23 @@ def validate_handoff(raw):
     except Exception as exc:
         raise ContractError("strategy/requirements", str(exc)) from None
     for agent in ("strategy", "creative"):
+        if agent == 'creative' and raw[agent].get('schema_version') == 'b-internal-candidate-v1':
+            from .adapter import validate_creative
+            validate_creative(raw[agent], raw['strategy'], raw['task_id'], raw['round_no'])
+            continue
         envelope(raw[agent], agent, raw["task_id"])
         if raw[agent]["round_no"] > raw["round_no"]:
             raise ContractError(agent + ".round_no", "上游版本来自未来轮次")
     data = raw["creative"]["data"]
+    if raw['creative']['schema_version'] == 'b-internal-candidate-v1':
+        validate_feedback(raw['feedback'], raw, records=True)
+        if raw['previous_result'] is not None:
+            envelope(raw['previous_result'], 'evaluation', raw['task_id'])
+            if raw['previous_result']['round_no'] != raw['round_no'] - 1:
+                raise ContractError('previous_result', '上一评估轮次必须连续')
+        if raw['round_no'] == 1 and (raw['feedback'] or raw['previous_result'] is not None):
+            raise ContractError('request', '首轮不能携带历史评估')
+        return deepcopy(raw)
     fields(data, {"strategy_result_id", "items", "assumptions", "constraint_conflicts"}, "creative.data")
     if data["strategy_result_id"] != raw["strategy"]["result_id"]:
         raise ContractError("creative.strategy_result_id", "创意必须引用本次评估的策略结果")
@@ -169,13 +189,16 @@ def validate_handoff(raw):
 
 
 def validate_draft(raw, request):
-    fields(raw, {"dimension_scores", "risks", "feedback", "recommended_action"}, "draft")
+    optional={'resolved_feedback_ids'} if isinstance(raw,dict) and 'resolved_feedback_ids' in raw else set()
+    fields(raw, {"dimension_scores", "risks", "feedback", "recommended_action"}|optional, "draft")
+    raw=deepcopy(raw)
     fields(raw["dimension_scores"], DIMENSIONS, "dimension_scores")
     for key, item in raw["dimension_scores"].items():
         fields(item, {"score", "reason", "target_path"}, key)
         integer(item["score"], key + ".score", 0, 100)
         text(item["reason"], key + ".reason")
         resolve_path(request, item["target_path"])
+        item['target_path']=item['target_path'].replace('.data.','.',1)
     if not isinstance(raw["risks"], list) or len(raw["risks"]) > 100:
         raise ContractError("risks", "须为风险数组，最多100项")
     for item in raw["risks"]:
@@ -185,7 +208,18 @@ def validate_draft(raw, request):
         for key in ("evidence", "description"):
             text(item[key], "risk." + key)
         resolve_path(request, item["target_path"])
+        item['target_path']=item['target_path'].replace('.data.','.',1)
     validate_feedback(raw["feedback"], request)
+    for item in raw['feedback']:item['target_path']=item['target_path'].replace('.data.','.',1)
+    resolved=raw.get('resolved_feedback_ids',[])
+    available={f['feedback_id']:f for f in request['feedback'] if not f['resolved']}
+    if (not isinstance(resolved,list) or len(resolved)>300 or any(not isinstance(i,str) or i not in available for i in resolved)
+            or len(set(resolved))!=len(resolved)):
+        raise ContractError('resolved_feedback_ids','只能确认当前收到的未解决反馈，不能重复或虚构标识')
+    for identity in resolved:
+        position=available[identity]['target_path'].replace('.data.','.',1)
+        if any(i['target_path']==position for i in raw['risks']+raw['feedback']):
+            raise ContractError('resolved_feedback_ids','当前仍报告该位置的问题，不能同时确认已解决')
     if raw["recommended_action"] not in ("accept", "regenerate_strategy", "regenerate_creative"):
         raise ContractError("recommended_action", "推荐动作非法")
     return deepcopy(raw)
@@ -199,6 +233,6 @@ def validate_config(config):
     integer(config["max_rounds"], "max_rounds", 1, 3)
     integer(config["max_attempts"], "max_attempts", 1, 3)
     integer(config["timeout_seconds"], "timeout_seconds", 10, 120)
-    if config["scoring_rule_version"] != "equal-weight-v1":
-        raise ContractError("scoring_rule_version", "仅支持固定五维等权规则equal-weight-v1")
+    if config["scoring_rule_version"] not in ("equal-weight-v1","equal-weight-v2"):
+        raise ContractError("scoring_rule_version", "仅支持已发布的固定五维等权规则")
     return deepcopy(config)

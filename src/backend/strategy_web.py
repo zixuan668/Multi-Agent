@@ -24,6 +24,9 @@ from src.agents.strategy.service import StrategyAgent
 from .tasks import TaskStore
 from .creative_workspace import CreativeWorkspace
 from .creative_web import dispatch as creative_dispatch
+from .evaluation_web import dispatch as evaluation_dispatch
+from src.agents.evaluation.workspace import EvaluationWorkspace
+from src.agents.evaluation.provider import EvaluationConfig, EvaluationProvider, EvaluationError
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -52,7 +55,7 @@ def build_request_payload(raw: dict[str, Any]) -> dict[str, Any]:
 
 
 class StrategyApplication:
-    def __init__(self, provider="compatible", model_client=None, *, creative_client=None, creative_provider="disabled", creative_demo=False) -> None:
+    def __init__(self, provider="compatible", model_client=None, *, creative_client=None, creative_provider="disabled", creative_demo=False, evaluation_client=None, evaluation_enabled=False) -> None:
         if provider not in ("compatible", "offline"):
             raise ConfigurationError("provider 必须为 compatible 或显式 offline")
         self.provider_name = provider
@@ -62,10 +65,16 @@ class StrategyApplication:
         config = {"provider": provider, "model": getattr(model_client, "model", "offline-rule-based"), "timeout_seconds": getattr(model_client, "timeout_seconds", 60), "temperature": getattr(model_client, "temperature", None), "prompt_version": self.agent.prompt_builder.version, "prompt_sha256": self.agent.prompt_builder.sha256, "validation_version": VALIDATION_VERSION, "implementation_sha256": implementation_fingerprint(), "semantic_review": hasattr(model_client, "assess_strategy") or hasattr(model_client, "review_strategy"), "strategy_quality_review": hasattr(model_client, "assess_strategy"), "strategy_editor": hasattr(model_client, "refine_strategy") and not hasattr(model_client, "assess_strategy"), "strategy_editor_version": getattr(model_client, "editor_version", None), "max_rounds": 3, "pass_threshold": 80, "scoring_rule_version": "equal-weight-v1", "max_attempts": 3}
         config["reasoning_effort"] = getattr(model_client, "reasoning_effort", None)
         config["assessment_prompt_sha256"] = getattr(model_client, "assessment_prompt_sha256", None)
+        if evaluation_enabled and evaluation_client is None:
+            evaluation_client=EvaluationProvider(EvaluationConfig.from_env())
+        if evaluation_client is not None:
+            config['evaluation_config_snapshot']=getattr(evaluation_client,'snapshot',evaluation_client.config.snapshot)()
         config["config_version"] = hashlib.sha256(json.dumps({k:v for k,v in config.items() if k != "config_version"}, sort_keys=True).encode()).hexdigest()[:16]
         self.config_version = config["config_version"]
         self.tasks = TaskStore(self.agent, config)
         self.creative = CreativeWorkspace(self.tasks, creative_client, enabled=creative_provider == "compatible" or creative_client is not None, demo=creative_demo)
+        self.evaluation = EvaluationWorkspace(self.creative, provider=evaluation_client, enabled=evaluation_enabled)
+        if self.evaluation.enabled: self.creative.evaluation_dispatch=self.evaluation.enqueue
         self._sessions = {}
         self._session_lock = threading.Lock()
 
@@ -131,6 +140,8 @@ def make_handler(application: StrategyApplication):
             super().end_headers()
 
         def do_GET(self) -> None:
+            if evaluation_dispatch(self, application, "GET"):
+                return
             if creative_dispatch(self, application, "GET"):
                 return
             path = urlparse(self.path).path
@@ -165,6 +176,8 @@ def make_handler(application: StrategyApplication):
             super().do_GET()
 
         def do_POST(self) -> None:
+            if evaluation_dispatch(self, application, "POST"):
+                return
             if creative_dispatch(self, application, "POST"):
                 return
             path = urlparse(self.path).path
@@ -243,10 +256,11 @@ def make_handler(application: StrategyApplication):
     return StrategyRequestHandler
 
 
-def create_server(host: str = "127.0.0.1", port: int = 8000, *, provider="compatible", model_client=None, creative_client=None, creative_provider="disabled", creative_demo=False) -> ThreadingHTTPServer:
-    application = StrategyApplication(provider, model_client, creative_client=creative_client, creative_provider=creative_provider, creative_demo=creative_demo)
+def create_server(host: str = "127.0.0.1", port: int = 8000, *, provider="compatible", model_client=None, creative_client=None, creative_provider="disabled", creative_demo=False, evaluation_client=None, evaluation_enabled=False) -> ThreadingHTTPServer:
+    application = StrategyApplication(provider, model_client, creative_client=creative_client, creative_provider=creative_provider, creative_demo=creative_demo, evaluation_client=evaluation_client, evaluation_enabled=evaluation_enabled)
     class Server(ThreadingHTTPServer):
         def server_close(self):
+            application.evaluation.close()
             application.creative.close()
             application.tasks.close()
             super().server_close()
@@ -260,10 +274,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--provider", choices=("compatible", "offline"), default="compatible")
     parser.add_argument("--creative-provider", choices=("compatible", "disabled"), default="compatible")
     parser.add_argument("--creative-demo", action="store_true", help="Enable explicitly labelled development-only C feedback")
+    parser.add_argument("--evaluation", action="store_true", help="启用服务端真实C评估，B交付后自动评估")
     args = parser.parse_args(argv)
     try:
-        server = create_server(args.host, args.port, provider=args.provider, creative_provider=args.creative_provider, creative_demo=args.creative_demo)
-    except ConfigurationError as exc:
+        server = create_server(args.host, args.port, provider=args.provider, creative_provider=args.creative_provider, creative_demo=args.creative_demo, evaluation_enabled=args.evaluation)
+    except (ConfigurationError, EvaluationError) as exc:
         print(f"{exc.code}: {exc}")
         return 2
     mode = "真实模型配置模式（调用成功前不表示连接已验证）" if args.provider == "compatible" else "显式离线演示（不计入真实模型验收）"

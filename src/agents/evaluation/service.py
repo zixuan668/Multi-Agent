@@ -6,7 +6,8 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
 from time import perf_counter
-from uuid import uuid4
+from uuid import uuid5, NAMESPACE_URL
+import json
 import re
 
 from .contracts import ContractError, DIMENSIONS, validate_config, validate_draft, validate_handoff
@@ -22,7 +23,7 @@ def hard_risks(request):
     strategy = request["strategy"]["data"]
     facts = "\n".join(str(v) for v in requirements.values() if isinstance(v, str))
     def risk(path, evidence, description, category="constraint"):
-        risks.append({"category": category, "severity": "high", "target_path": path, "evidence": str(evidence), "description": description})
+        risks.append({"category": category, "severity": "high", "target_path": path, "evidence": str(evidence)[:1000], "description": description})
     for i, point in enumerate(strategy["selling_points"]):
         if re.sub(r"\s", "", point["source_quote"]) not in re.sub(r"\s", "", facts):
             risk(f"strategy.selling_points[{i}].source_quote", point["source_quote"], "卖点引用不是原始需求的可定位原文。", "fact")
@@ -40,11 +41,34 @@ def hard_risks(request):
             bad = names - channels if required else names & channels
             if bad:
                 risk("strategy.channels", "、".join(sorted(bad)), "未遵守用户必选/禁选渠道约束。")
+    product_facts = requirements['product_description']
+    # Attached evidence is untrusted: copied quotations still need content review.
+    for i, item in enumerate(request['creative']['data']['items']):
+        for evidence in item.get('evidence', []):
+            quote = evidence['source_quote']
+            if re.sub(r'\s', '', quote) not in re.sub(r'\s', '', product_facts):
+                risk(f'creative.items[{i}].copy', quote,
+                     '随附创意依据无法定位到原始产品事实，不能作为事实支持。', 'fact')
+        for field in ('copy', 'slogan', 'poster_concept', 'video_script'):
+            value = item[field]
+            if not isinstance(value, str): continue
+            for phrase in ('获得国际权威认证', '保证效果', '百分百有效', '100%有效', '包治百病'):
+                if phrase in value and phrase not in product_facts:
+                    matches=list(re.finditer(re.escape(phrase),value))
+                    if all(re.search(r'(?:不|未|无|不得|不能|避免|禁止|不应)(?:宣传|承诺|声称|作出)?$',value[max(0,m.start()-10):m.start()]) for m in matches):
+                        continue
+                    risk(f'creative.items[{i}].{field}', phrase,
+                         '文案包含未获原始产品事实支持的认证或效果承诺。', 'fact')
+            for match in re.finditer(r'(?:禁用表达|禁用词)[：:\s]*([^。；;\n]+)', special):
+                for phrase in re.split(r'[、,，]', match[1]):
+                    phrase = phrase.strip(' “”“\"\'')
+                    if phrase and phrase in value:
+                        risk(f'creative.items[{i}].{field}', phrase, '出现用户明确禁用的表达。')
     return risks
 
 
 def decide(current, history, config):
-    highs = lambda r: sum(x["severity"] == "high" for x in r["outcome"]["evaluation"]["data"]["risks"])
+    highs = lambda r: sum(x["severity"] == "high" for x in r["outcome"]["evaluation"]["data"]["risks"]) + r['outcome'].get('pending_high_feedback_count',0)
     meds = lambda r: sum(x["severity"] == "medium" for x in r["outcome"]["evaluation"]["data"]["risks"])
     data = current["outcome"]["evaluation"]["data"]
     evaluation = current["outcome"]["evaluation"]
@@ -52,7 +76,7 @@ def decide(current, history, config):
     if score >= config["pass_threshold"] and highs(current) == 0:
         return "accept", "passed", "passed", evaluation["result_id"], "completed"
     if evaluation["round_no"] < config["max_rounds"]:
-        targets = {f["target_agent"] for f in data["feedback"]}
+        targets = {f["target_agent"] for f in data["feedback"] + current['outcome'].get('pending_feedback',[])}
         action = "regenerate_creative" if targets == {"creative"} else "regenerate_strategy"
         return action, "not_evaluated", None, None, "optimizing"
     candidates = history + [current]
@@ -64,7 +88,7 @@ def decide(current, history, config):
     return "stop_needs_review", "needs_review", "round_limit", chosen["outcome"]["evaluation"]["result_id"], "completed"
 
 
-def evaluate_bundle(source):
+def evaluate_bundle(source, *, prior_records=()):
     if not isinstance(source, dict) or set(source) - {"label", "source", "rounds", "config_snapshot"}:
         raise ContractError("bundle", "须包含rounds及非敏感config_snapshot，不能含未声明字段")
     config = validate_config(source.get("config_snapshot"))
@@ -73,6 +97,7 @@ def evaluate_bundle(source):
         raise ContractError("rounds", "须为1至max_rounds轮的连续记录")
     records, events = [], []
     unresolved_feedback = []
+    feedback_status = []
     original = None
     for index, row in enumerate(rows, start=1):
         clock = perf_counter()
@@ -104,7 +129,11 @@ def evaluate_bundle(source):
                 raise ContractError("creative", "新创意标识与递增版本不能复用")
         draft = validate_draft(row["draft"], request)
         score = float((sum(Decimal(s["score"]) for s in draft["dimension_scores"].values()) / 5).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP))
-        risks = draft["risks"] + hard_risks(request)
+        # A risk classified as a factual error must not become publishable merely
+        # because the model calls the unsupported feature "low" or "medium".
+        # The untouched model draft stays in replay_source for audit.
+        risks = [{**r, 'severity': 'high' if r['category']=='fact' else r['severity']}
+                 for r in draft['risks']] + hard_risks(request)
         seen = set()
         risks = [r for r in risks if not ((key := (r["category"], r["severity"], r["target_path"], r["description"])) in seen or seen.add(key))]
         feedback = deepcopy(draft["feedback"])
@@ -112,26 +141,56 @@ def evaluate_bundle(source):
         # draft only contains creative feedback. Advice cannot hide that route.
         for risk in risks:
             owner = risk["target_path"].split(".")[0]
-            if risk["severity"] == "high" and owner in ("strategy", "creative") and not any(f["target_agent"] == owner and f["target_path"] == risk["target_path"] for f in feedback):
-                feedback.append({"target_agent": owner, "target_path": risk["target_path"], "issue": risk["description"], "suggestion": "根据原始需求消除该严重风险，并在下一轮提供可核验依据。", "priority": "high"})
+            position=risk['target_path']
+            if owner not in ('strategy','creative'):
+                owner='strategy'
+                position='strategy.channels' if '渠道' in risk['evidence']+risk['description'] else 'strategy.positioning'
+            matching=next((f for f in feedback if f['target_agent']==owner and f['target_path']==position),None)
+            if risk['severity']=='high' and matching:
+                matching['priority']='high'
+                if risk['description'] not in matching['issue']:
+                    matching['issue']=(risk['description']+'；'+matching['issue'])[:1000]
+            if risk["severity"] == "high" and not matching:
+                feedback.append({"target_agent": owner, "target_path": position, "issue": risk["description"], "suggestion": "根据原始需求消除该严重风险，并在下一轮提供可核验依据。", "priority": "high"})
         if (score < config["pass_threshold"] or any(r["severity"] == "high" for r in risks)) and not feedback:
             key = min(DIMENSIONS, key=lambda k: draft["dimension_scores"][k]["score"])
             path = draft["dimension_scores"][key]["target_path"].replace(".data.", ".", 1)
             feedback = [{"target_agent": path.split(".")[0] if path.split(".")[0] in ("strategy", "creative") else "strategy", "target_path": path if not path.startswith("requirements.") else "strategy.positioning", "issue": f"{key}为最低分维度，尚未达到通过条件。", "suggestion": "依据该维度理由和原始约束修改对应内容，并在下一轮复核。", "priority": "high" if any(r["severity"] == "high" for r in risks) else "medium"}]
-        result_id = f"evaluation-{uuid4().hex}"
-        feedback = [{**f, "feedback_id": f"feedback-{uuid4().hex}", "evaluation_id": result_id, "resolved": False} for f in feedback]
+        prior = prior_records[index - 1] if index <= len(prior_records) else None
+        identity=json.dumps({'task':request['task_id'],'strategy':request['strategy']['result_id'],
+                            'creative':request['creative']['result_id'],'round':index,
+                            'config':config['config_version'],'draft':draft},sort_keys=True,ensure_ascii=False)
+        result_id = prior['outcome']['evaluation']['result_id'] if prior else f"evaluation-{uuid5(NAMESPACE_URL,identity).hex}"
+        feedback = [{**f, "feedback_id": f"feedback-{result_id}-{i}", "evaluation_id": result_id, "resolved": False} for i, f in enumerate(feedback)]
         data = {"strategy_result_id": request["strategy"]["result_id"], "creative_result_id": request["creative"]["result_id"], "dimension_scores": draft["dimension_scores"], "total_score": score, "risks": risks, "feedback": feedback, "recommended_action": draft["recommended_action"], "decision": None}
         response = {"schema_version": "1.0", "task_id": request["task_id"], "agent": "evaluation", "round_no": index, "attempt_count": request["attempt_count"], "status": "succeeded", "result_id": result_id, "version": index, "data": data, "error": None, "created_at": now()}
+        if prior:
+            response['created_at'] = prior['outcome']['evaluation']['created_at']
         record = {"request": request, "outcome": {"evaluation": response}}
+        if config['scoring_rule_version']=='equal-weight-v2':
+            # A model omitting yesterday's issue is not evidence of a fix. The
+            # versioned rule preserves old frozen reports while protecting new jobs.
+            pending=[deepcopy(f) for f in unresolved_feedback if f['feedback_id'] not in draft.get('resolved_feedback_ids',[])]
+            current_high_paths={r['target_path'] for r in risks if r['severity']=='high'}
+            record['outcome'].update(pending_feedback=pending,pending_high_feedback_count=sum(
+                f['priority']=='high' and f['target_path'] not in current_high_paths for f in pending))
         action, assessment, termination, selected, status = decide(record, records, config)
         data["decision"] = action
         record["outcome"].update(decision=action, assessment_status=assessment, termination_reason=termination, selected_evaluation_id=selected, task_status=status, iteration_count=index, remaining_issues=[f["issue"] for f in feedback])
+        record['outcome']['remaining_issues'].extend(f['issue'] for f in record['outcome'].get('pending_feedback',[]) if f['priority']=='high')
         events.extend([{"time": response["created_at"], "round_no": index, "agent": "evaluation", "status": "started", "attempt_count": request["attempt_count"], "summary": "载入上游关联结果，校验公开契约与版本引用。"}, {"time": now(), "round_no": index, "agent": "evaluation", "status": "succeeded", "attempt_count": request["attempt_count"], "elapsed_ms": round((perf_counter() - clock) * 1000, 2), "summary": f"综合分 {score:.1f} · 系统动作 {action}"}])
         records.append(record)
+        for old in feedback_status:
+            if old['feedback_id'] in draft.get('resolved_feedback_ids',[]):
+                old.update(resolved=True,resolved_by_evaluation_id=result_id)
+        resolved_ids={f['feedback_id'] for f in feedback_status if f['resolved']}
+        unresolved_feedback=[f for f in unresolved_feedback if f['feedback_id'] not in resolved_ids]
         unresolved_feedback.extend(deepcopy(feedback))
+        feedback_status.extend(deepcopy(feedback))
     final = deepcopy(records[-1]["outcome"])
     selected_index = next((i for i, r in enumerate(records) if r["outcome"]["evaluation"]["result_id"] == final["selected_evaluation_id"]), None)
     if selected_index is not None:
         selected_data = records[selected_index]["outcome"]["evaluation"]["data"]
         final["remaining_issues"] = [r["description"] for r in selected_data["risks"] if r["severity"] in ("high", "medium")] + [f["issue"] for f in selected_data["feedback"]]
-    return {"label": str(source.get("label", "导入记录"))[:100], "mode": "offline", "source": "预设评分 / 离线规则重放 · 未调用模型", "config_snapshot": config, "records": records, "events": events, "selected_index": selected_index, "final": final, "replay_source": deepcopy(source)}
+        final['remaining_issues'].extend(f['issue'] for f in records[selected_index]['outcome'].get('pending_feedback',[]) if f['priority']=='high')
+    return {"label": str(source.get("label", "导入记录"))[:100], "mode": "offline", "source": "预设评分 / 离线规则重放 · 未调用模型", "config_snapshot": config, "records": records, "events": events, "selected_index": selected_index, "final": final, "feedback_status":feedback_status, "replay_source": deepcopy(source)}

@@ -2,58 +2,49 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#e0e5ec"><title>智策 · 效果评估工作台</title>
-  <link rel="icon" href="./favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="./style.css">
+  <meta name="theme-color" content="#e0e5ec"><title>智策 · 效果评估智能体</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="./style.css"><link rel="stylesheet" href="./shell.css">
 </head>
-<body>
+<body class="evaluation-clean">
   <a class="skip-link" href="#main">跳到评估内容</a>
-  <aside class="sidebar">
-    <a class="brand" href="/" aria-label="智策首页"><span class="brand-icon"><i></i><i></i><i></i></span><span>智策<span class="brand-en">ZHICE INTELLIGENCE</span></span></a>
-    <div class="workspace-label">营销智能协同平台 <span>01</span></div>
-    <nav aria-label="工作台导航">
-      <button class="nav-item active" data-view="workbench"><span data-icon="grid"></span>评估工作台<span class="nav-dot"></span></button>
-      <button class="nav-item" data-view="versions"><span data-icon="layers"></span>轮次与版本</button>
-      <button class="nav-item" data-view="events"><span data-icon="activity"></span>协同过程</button>
-      <button class="nav-item" data-view="report"><span data-icon="file"></span>结果报告</button>
-    </nav>
-    <div class="sidebar-section">工作空间</div>
-    <button class="nav-item" id="history-btn"><span data-icon="clock"></span>本地重放记录<span id="history-count" class="count">0</span></button>
-    <button class="nav-item" id="config-btn"><span data-icon="sliders"></span>配置快照</button>
-    <div class="sidebar-bottom">
-      <div class="mode-card"><span class="live-dot"></span><div>离线重放<span>预设评分 · 真实规则计算</span></div><span data-icon="shield"></span></div>
-      <button class="animation-toggle" id="motion-btn" aria-pressed="true"><span data-icon="sparkles"></span><span id="motion-label">粒子动效已开启</span><span class="toggle"><i></i></span></button>
-      <div class="profile"><div class="avatar">C</div><div>效果评估模块<span>评分 / 风险 / 反馈调度</span></div><span class="version-label">V1.0</span></div>
-    </div>
-  </aside>
+  <header class="agent-topbar"><a class="agent-brand" href="/" aria-label="智策营销首页"><span class="agent-brand-mark">策</span><span>智策营销</span></a><nav class="agent-topnav" aria-label="智能体流程导航"><a href="/workspace">策略方案</a><a href="/creative" id="nav-creative">创意工作台</a><button class="current" data-view="workbench">效果评估</button></nav><span class="agent-mode system-status">效果评估智能体</span></header>
   <div class="app-shell">
-    <header class="topbar"><div class="breadcrumb">智策营销 <span>/</span> <b>效果评估智能体</b></div><div class="topbar-right"><span class="system-status"><i></i>本地规则引擎</span><button class="icon-button" id="mobile-motion" aria-label="暂停粒子动效" aria-pressed="true"><span data-icon="sparkles"></span></button><button class="icon-button" id="help-btn" aria-label="使用说明"><span data-icon="help"></span></button><div class="top-avatar">C</div></div></header>
     <main id="main" tabindex="-1">
-      <div class="page-heading"><div><div class="eyebrow">EVALUATION INTELLIGENCE</div><h1 id="page-title">效果评估工作台<span class="title-dot">.</span></h1><p id="page-subtitle">从方案到决策，让每一步都有据可循。</p></div><div class="heading-actions"><button class="button secondary" id="import-btn"><span data-icon="upload"></span>导入记录</button><button class="button primary" id="run-btn"><span data-icon="play"></span><span>重放评估</span></button></div></div>
-      <div class="task-bar"><div class="task-name"><span class="task-glyph" data-icon="box"></span><div><label for="product-select">当前产品</label><select id="product-select" aria-label="选择产品样例"><option>正在载入…</option></select></div></div><div class="scenario-select"><label for="scenario-select">评估场景</label><select id="scenario-select" aria-label="选择评估场景"></select></div><div class="task-meta"><span id="task-id">—</span><span class="badge neutral">契约样例</span></div></div>
+      <div class="page-heading"><div><h1 id="page-title">效果评估智能体</h1><p id="page-subtitle" hidden></p></div><div class="heading-actions"><button class="button secondary" id="import-btn"><span data-icon="upload"></span>导入报告</button><button class="button primary" id="run-btn" hidden><span data-icon="play"></span><span>重放评估</span></button><button class="button primary" id="export-final-btn" hidden>导出完整方案</button><button class="button primary" id="delivery-a-btn" hidden>交回策略调整 <span aria-hidden="true">→</span></button></div></div>
+      <nav class="evaluation-tabs" aria-label="效果评估智能体导航"><button class="nav-item active" data-view="workbench">评估结论</button><button class="nav-item" data-view="versions">历史轮次</button><button class="nav-item" data-view="report">方案报告</button></nav>
+      <div class="task-bar" hidden><div class="task-name"><div><label for="product-select">产品</label><select id="product-select" aria-label="选择产品样例"></select></div></div><div class="scenario-select"><label for="scenario-select">演示场景</label><select id="scenario-select" aria-label="选择评估场景"></select></div><div class="task-meta"><span id="task-id" hidden></span><span class="badge neutral">演示</span></div></div>
       <div id="error-banner" class="error-banner" role="alert" hidden></div>
-      <section id="view-workbench" class="view">
-        <div class="overview-grid">
-          <section class="panel engine-panel"><div class="panel-heading"><div><span class="eyebrow">AGENT ORCHESTRATION</span><h2>协同评估引擎</h2></div><span id="engine-badge" class="badge cyan"><i></i>规则计算完成</span></div>
-            <div class="particle-stage" id="particle-stage"><canvas id="flow-canvas" aria-label="策略、创意与评估之间的粒子流动" role="img"></canvas><div class="flow-node strategy-node"><div class="node-icon" data-icon="compass"></div><b>营销策略</b><span>STRATEGY</span><small id="strategy-version">V1 · 已载入</small></div><div class="flow-node creative-node"><div class="node-icon" data-icon="pen"></div><b>广告创意</b><span>CREATIVE</span><small id="creative-version">V2 · 已载入</small></div><div class="flow-node evaluation-node"><div class="node-icon" data-icon="aperture"></div><b>效果评估</b><span>EVALUATION</span><small id="evaluation-version">V2 · 规则完成</small></div><div class="flow-caption"><span><i></i>结构化数据流</span><span id="flow-direction">反馈闭环 · 创意 → 评估</span></div></div>
-            <div class="engine-footer"><div><span class="micro-label">执行状态</span><b id="task-status">流程结束</b></div><div><span class="micro-label">有效评估</span><b id="round-counter">02 <em>/ 03</em></b></div><div><span class="micro-label">终止原因</span><b id="termination">达到通过条件</b></div><button class="text-link" data-view="events">查看过程 <span>↗</span></button></div>
-          </section>
-          <section class="panel score-panel"><div class="panel-heading"><div><span class="eyebrow">QUALITY SCORE</span><h2>综合质量评分</h2></div><button class="icon-button" id="score-help" aria-label="评分规则"><span data-icon="info"></span></button></div><div class="score-visual"><svg class="score-ring" viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="80" class="ring-track"/><circle cx="100" cy="100" r="80" class="ring-progress" id="ring-progress"/></svg><div class="score-value"><span id="total-score">—</span><small>/ 100</small><span id="assessment-badge" class="badge green">通过评估</span></div><span class="ring-small-label">五维等权平均</span></div><div class="score-bottom"><span id="score-delta" class="score-delta">载入评估结果</span><span id="pass-threshold">通过线 80.0</span></div><p class="scope-note">评分为方案质量参考，不代表真实投放效果。</p></section>
+      <section id="entry-panel" class="panel entry-panel" hidden>
+        <div class="entry-symbol" data-icon="shield" aria-hidden="true"></div><h2>接收创意，给出评估结论</h2><p>选择已交付的任务，或从创意工作区开始。</p><div id="entry-tasks"></div><div class="entry-actions"><a class="button primary" href="/creative">前往创意工作区 →</a><button class="button secondary" id="show-demo">查看演示</button></div>
+      </section>
+      <section id="processing-panel" class="panel processing-panel" hidden>
+        <div class="processing-heading"><div><span id="processing-product" class="processing-product"></span><h2 id="live-title">正在接收方案</h2><p id="live-status" role="status" aria-live="polite">正在打开本次交付。</p></div><div class="processing-mark" data-icon="shield" aria-hidden="true"></div></div>
+        <ol hidden class="review-stages" aria-label="评估进展"><li id="review-stage-0"><span>1</span>方案已接收</li><li id="review-stage-1"><span>2</span>评分与风险检查</li><li id="review-stage-2"><span>3</span>评估结论</li></ol>
+        <div hidden class="processing-preview"><div class="processing-preview-head"><h3>本次广告创意</h3><div id="preview-channels" class="preview-channels" role="group" aria-label="渠道"></div></div><div id="preview-tabs" class="segmented" role="group" aria-label="创意内容"><button data-preview="copy" class="active">广告文案</button><button data-preview="slogan">核心短句</button><button data-preview="poster_concept">海报文字</button><button data-preview="video_script">短视频脚本</button></div><div id="preview-content" class="preview-content"></div></div>
+        <div class="processing-actions"><a id="processing-back" class="text-link" href="/creative">返回创意工作区</a><button class="text-link" id="refresh-live">刷新状态</button></div>
+      </section>
+      <div id="live-task" hidden></div>
+      <section id="view-workbench" class="view" hidden>
+        <div id="history-notice" class="history-notice" hidden><span>正在查看历史轮次</span><button class="text-link" id="return-final">返回当前结论 →</button></div>
+        <div class="overview-grid result-overview">
+          <section class="panel conclusion-panel"><div id="particle-stage" class="conclusion-flow"><canvas id="flow-canvas" aria-hidden="true"></canvas></div><div class="conclusion-top"><span id="conclusion-product">当前方案</span><span class="badge neutral" id="conclusion-round">尚未评估</span></div><div class="conclusion-symbol" id="conclusion-symbol" aria-hidden="true">✓</div><h2 id="conclusion-title">等待评估结果</h2><p id="conclusion-body"></p><div class="conclusion-actions"><button class="button primary" id="revise-live" hidden>交回 B 修改创意 →</button><button class="button secondary" data-view="report">查看完整方案</button><a class="text-link" id="back-creative" href="/creative">返回创意工作区</a></div></section>
+          <section class="panel score-panel"><div class="panel-heading"><h2>综合评分</h2><button class="icon-button" id="score-help" aria-label="评分规则"><span data-icon="info"></span></button></div><div class="score-visual"><svg class="score-ring" viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="80" class="ring-track"/><circle cx="100" cy="100" r="80" class="ring-progress" id="ring-progress"/></svg><div class="score-value"><span id="total-score">—</span><small>/ 100</small><span id="assessment-badge" class="badge neutral">尚未评估</span></div></div><div class="score-bottom"><span id="score-delta"></span><span id="pass-threshold">通过线 80</span></div></section>
         </div>
         <div class="details-grid">
-          <section class="panel dimensions-panel"><div class="panel-heading"><div><h2>五维质量画像</h2><p>每一分，都能追溯到方案内容</p></div><span class="small-label">权重各 20%</span></div><div id="dimensions"></div><div class="dimension-note"><span data-icon="cursor"></span>点击维度，查看评分依据与对应内容</div></section>
-          <section class="panel risks-panel"><div class="panel-heading"><div><h2>风险与约束</h2><p>独立于质量评分的风险检查</p></div><span id="risk-count" class="risk-number">00</span></div><div class="risk-filter" role="group" aria-label="风险等级筛选"><button data-filter="all" class="active">全部</button><button data-filter="high">严重 <span id="high-count">0</span></button><button data-filter="medium">中等</button><button data-filter="low">低</button></div><div id="risks"></div><div class="risk-footer"><span data-icon="shield"></span><span>严重风险具有通过否决作用</span></div></section>
-          <section class="panel feedback-panel"><div class="panel-heading"><div><h2>下一步行动</h2><p>由系统规则确定反馈方向</p></div><span data-icon="arrow-up-right" class="muted-icon"></span></div><div id="feedback"></div></section>
+          <section class="panel dimensions-panel"><div class="panel-heading"><h2>五维评分</h2></div><div id="dimensions"></div></section>
+          <section class="panel risks-panel"><div class="panel-heading"><h2>风险检查</h2><span id="risk-count" class="risk-number">—</span></div><div class="risk-filter" role="group" aria-label="风险等级筛选"><button data-filter="all" class="active">全部 <span id="all-count">0</span></button><button data-filter="high">严重 <span id="high-count">0</span></button><button data-filter="medium">中等 <span id="medium-count">0</span></button><button data-filter="low">轻微 <span id="low-count">0</span></button></div><div id="risks"></div></section>
+          <section class="panel feedback-panel"><div class="panel-heading"><h2 id="feedback-heading">修改建议</h2></div><div id="feedback"></div></section>
         </div>
-        <section class="panel context-panel"><div class="panel-heading"><div><h2>方案与评估依据</h2><p>原始需求、策略与创意保持完整关联</p></div><div class="segmented" role="group" aria-label="内容切换"><button data-context="requirements" class="active">原始需求</button><button data-context="strategy">营销策略</button><button data-context="creative">广告创意</button></div></div><div id="context-content"></div></section>
+        <details class="panel context-panel" id="source-details"><summary>查看方案与评估依据</summary><div class="segmented" role="group" aria-label="内容切换"><button data-context="requirements" class="active">原始需求</button><button data-context="strategy">营销策略</button><button data-context="creative">广告创意</button></div><div id="context-content"></div></details>
       </section>
-      <section id="view-versions" class="view" hidden></section>
-      <section id="view-events" class="view" hidden></section>
-      <section id="view-report" class="view" hidden></section>
-      <footer class="page-footer"><span>ZHICE · EFFECT EVALUATION <i></i> 契约样例 / 离线规则重放</span><span>策略、创意生成与全站历史服务待集成</span></footer>
+      <section id="view-versions" class="view" hidden></section><section id="view-report" class="view" hidden></section><section id="view-events" class="view" hidden></section>
+      <footer class="page-footer">评分仅用于方案质量参考，不代表真实投放效果。</footer>
     </main>
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-  <dialog id="detail-dialog" aria-labelledby="dialog-title"><div class="dialog-header"><div><span class="eyebrow" id="dialog-eyebrow">EVALUATION DETAIL</span><h2 id="dialog-title">详情</h2></div><button id="dialog-close" class="icon-button" aria-label="关闭详情"><span data-icon="x"></span></button></div><div id="dialog-content"></div></dialog>
+  <dialog id="detail-dialog" aria-labelledby="dialog-title"><div class="dialog-header"><h2 id="dialog-title">详情</h2><button id="dialog-close" class="icon-button" aria-label="关闭详情"><span data-icon="x"></span></button></div><div id="dialog-content"></div></dialog>
+  <dialog id="delivery-dialog" class="delivery-dialog" aria-labelledby="delivery-heading"><div class="dialog-header"><h2 id="delivery-heading">导出策略修改文档</h2><button id="close-delivery" class="icon-button" aria-label="关闭交付">×</button></div><div class="delivery-bridge"><div><span>效果评估智能体</span><strong id="delivery-from">评估已完成</strong></div><b aria-hidden="true">→</b><div><span>A · 营销策略</span><strong>调整营销策略</strong></div></div><p id="delivery-description" class="delivery-description">请先调整以下策略问题，再更新广告创意。</p><div id="delivery-summary"></div><p id="delivery-note" role="alert" hidden></p><div class="delivery-actions"><button id="cancel-delivery" class="button secondary">返回评估</button><button id="confirm-delivery" class="button primary">下载 Word 文档 →</button></div></dialog>
   <input type="file" id="file-input" accept="application/json,.json" hidden>
+  <div hidden><span class="mode-card"></span><span id="dialog-eyebrow"></span><button id="history-btn">本地记录<span id="history-count">0</span></button><button id="config-btn">配置</button><button id="help-btn">说明</button><button id="strategy-feedback">策略反馈</button><div class="engine-panel"><span id="engine-badge"></span><span id="strategy-version"></span><span id="creative-version"></span><span id="evaluation-version"></span><span id="task-status"></span><span id="round-counter"></span><span id="termination"></span><span id="flow-direction"></span></div></div>
   <script type="module" src="./app.js"></script>
 </body></html>

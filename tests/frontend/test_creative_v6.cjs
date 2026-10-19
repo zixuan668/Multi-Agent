@@ -23,10 +23,10 @@ const context={...handoff.strategy.data,product_name:handoff.requirements.produc
 const data={items:[{channel:context.channels[0].name,copy:'初稿正文',slogan:'原始短句',poster_concept:'【标题】产品',video_script:'0–20s｜产品文字',evidence:[],pending_confirmations:[]}]};
 const v1={result_id:'creative-test-1',version:1,round_no:1,strategy_result_id:handoff.strategy.result_id,strategy_version:1,created_at:new Date().toISOString(),creative_instruction:'自然直接',data,edit_trace:[{path:'items[0].slogan',source:'ai_draft'}],feedback_applied:[],previous_result_id:null};
 const record={handoff,context,versions:[v1],deliveries:[],feedback:[],events:[],state:'ready',last_error:null,demo_enabled:true};
-const calls=[],savedDrafts=new Map();
-async function request(url,body){calls.push({url,body});if(url==='/api/session')return{};if(url==='/api/creative/history')return {items:[]};if(url.endsWith('/state'))return structuredClone(record);if(url.endsWith('/operations')){assert.equal(body.action,'edit');const v2=structuredClone(v1);v2.result_id='creative-test-2';v2.version=2;v2.previous_result_id=v1.result_id;v2.data.items[0].slogan=body.value;v2.edit_trace=[{path:body.path,source:'human'}];record.versions.push(v2);record.job={status:'succeeded'};return record.job;}throw Error('Unexpected network operation '+url);}
+const calls=[],savedDrafts=new Map(),delays=[];let evaluationStatus='succeeded',evaluationReads=0;
+async function request(url,body){calls.push({url,body});if(url==='/api/session')return{};if(url==='/api/creative/history')return {items:[]};if(url.includes('/evaluation/state')){evaluationReads++;assert.equal(ctx.location.href,'','stay on B until conclusion exists');return {job:{status:evaluationReads===1?'running':evaluationStatus,stage:'generating',creative_result_id:record.versions.at(-1).result_id,error:evaluationStatus==='failed'?{message:'测试评估失败'}:null}};}if(url.endsWith('/package')||url.includes('/package?'))return {...handoff,creative:record.versions.at(-1)};if(url.endsWith('/delivery')){record.state='pending';record.deliveries.push({delivery_id:'delivery-test'});return {evaluation_job:{status:'running'}};}if(url.endsWith('/state'))return structuredClone(record);if(url.endsWith('/operations')){assert.equal(body.action,'edit');const v2=structuredClone(v1);v2.result_id='creative-test-2';v2.version=2;v2.previous_result_id=v1.result_id;v2.data.items[0].slogan=body.value;v2.edit_trace=[{path:body.path,source:'human'}];record.versions.push(v2);record.job={status:'succeeded'};return record.job;}throw Error('Unexpected network operation '+url);}
 const win={CreativeAPI:{request,url:(t,o)=>`/api/tasks/${t}/creative/${o}`,node:(tag,text,cls)=>{const n=new El(tag);if(text!==undefined)n.textContent=text;if(cls)n.classes=new Set(cls.split(' '));return n;}},addEventListener(){}};
-const ctx=vm.createContext({window:win,document,URLSearchParams,location:{search:'?task_id='+handoff.task_id,href:''},history:{replaceState(){}},sessionStorage:{setItem:(k,v)=>savedDrafts.set(k,v),getItem:k=>savedDrafts.get(k)||null},navigator:{clipboard:{writeText:async()=>{}}},setTimeout:fn=>{queueMicrotask(fn);return 1;},clearTimeout(){},Blob,URL,console});
+const ctx=vm.createContext({window:win,document,URLSearchParams,location:{search:'?task_id='+handoff.task_id,href:''},history:{replaceState(){}},sessionStorage:{setItem:(k,v)=>savedDrafts.set(k,v),getItem:k=>savedDrafts.get(k)||null},navigator:{clipboard:{writeText:async()=>{}}},setTimeout:(fn,ms)=>{delays.push(ms);queueMicrotask(fn);return 1;},clearTimeout(){},Blob,URL,console});
 vm.runInContext(fs.readFileSync(path.join(root,'web/creative.js'),'utf8'),ctx);
 const flush=()=>new Promise(r=>setImmediate(r));
 async function run(){
@@ -40,7 +40,16 @@ async function run(){
  await button('data-save-edit','slogan').click();await flush();await flush();
  assert.match(id('creativeRoundChip').textContent,/创意已保存/);assert.equal(record.versions[0].data.items[0].slogan,'原始短句');assert.equal(id('sloganOutput').textContent,'人工短句');assert.match(id('sloganHistory').textContent,/人工修改/);
  assert.equal(calls.filter(c=>c.url.endsWith('/operations')).length,1,'one save, one scoped operation');
+ assert.ok(!delays.includes(650)&&!delays.includes(850)&&!delays.includes(400),'completed model/save operations do not wait for staged animation timers');
  assert.equal(document.getElementById('versionControls'),null,'history controls removed');assert.equal(document.getElementById('railCard0'),null,'source sidebar removed');assert.equal(document.getElementById('checkIssues'),null,'no inline issue area');assert.equal(document.getElementById('jsonPreview'),null,'no JSON handoff preview');assert.equal(document.getElementById('packageFields'),null,'no technical version chain');
+ record.demo_enabled=false;
+ await id('packageBtn').click();assert.equal(id('cHandoffModal').classList.contains('hidden'),false);
+ await Promise.all([id('deliverCBtn').click(),id('deliverCBtn').click()]);assert.match(ctx.location.href,/evaluation\/\?task_id=.*receive=1/);assert.equal(evaluationReads,0,'enter C immediately; no model wait on B');
+ assert.equal(calls.filter(c=>c.url.endsWith('/delivery')).length,1,'double click submits only once');
+ ctx.location.href='';
+ const posted=calls.filter(c=>c.body!==undefined).length;evaluationStatus='succeeded';evaluationReads=0;
+ vm.runInContext(fs.readFileSync(path.join(root,'web/creative.js'),'utf8'),ctx);await flush();await flush();
+ assert.match(ctx.location.href,/evaluation\/\?task_id=/);assert.equal(calls.filter(c=>c.body!==undefined).length,posted,'refresh returns to C without resubmitting');
  console.log('B v6: actual DOM/controller renders, tabs isolate content, drafts survive switches, dirty delivery blocks, save appends version, source trace, simplified dialogs and hidden history; reads never generate.');
 }
 run().catch(e=>{console.error(e);process.exitCode=1;});

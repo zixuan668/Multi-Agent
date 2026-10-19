@@ -15,14 +15,14 @@
     <button data-nav="creative">创意工作台</button>
     <button data-nav="evaluation">评估交付</button>
   </nav>
-  <div class="mode-badge">真实模型 · C 尚未评估</div>
+  <div class="mode-badge">广告创意</div>
 </header>
 <main class="shell">
   <section class="page-head"><div><h1 id="pageTitle">策略结果 → 创意交付</h1></div><p class="page-note" id="pageNote">把 A 的已确认策略作为 B 的唯一上游输入，并保留完整版本链。</p></section>
   <section class="flowbar" aria-label="完整信息流">
     <div class="flow-step done active" data-flow="strategy"><span class="flow-num">A</span><span class="flow-copy"><strong>策略智能体</strong><small>策略已完成</small></span></div><span class="flow-arrow"></span>
     <div class="flow-step" data-flow="creative"><span class="flow-num">B</span><span class="flow-copy"><strong>创意智能体</strong><small id="flowBText">等待接收策略</small></span></div><span class="flow-arrow"></span>
-    <div class="flow-step" data-flow="evaluation"><span class="flow-num">C</span><span class="flow-copy"><strong>效果评估</strong><small id="flowCText">等待创意结果</small></span></div>
+    <div class="flow-step" data-flow="evaluation"><span class="flow-num">✓</span><span class="flow-copy"><strong>效果评估智能体</strong><small id="flowCText">等待创意结果</small></span></div>
   </section>
 
   <section id="view-strategy" class="view"><div class="panel" id="strategySummary"></div></section>
@@ -45,13 +45,13 @@
 
   <section id="view-creative" class="view hidden">
     <div class="panel">
-      <div class="panel-head"><div><h2>广告创意智能体</h2><p>依据 A 的策略发展渠道创意；不重写定位、预算或目标人群，也不替 C 做评分结论。</p></div><div class="v6-inline-0"><span class="chip purple" id="creativeRoundChip">创意版本 v1</span><span class="chip good">策略来源已锁定</span><span class="chip purple hidden" id="humanEditChip">人工编辑 0</span></div></div>
+      <div class="panel-head"><div><h2>广告创意智能体</h2></div><div class="v6-inline-0"><span class="chip purple" id="creativeRoundChip">创意版本 v1</span><span class="chip good">策略来源已锁定</span><span class="chip purple hidden" id="humanEditChip">人工编辑 0</span></div></div>
       <div class="creative-layout focused-layout">
         
         <div class="creative-main"><div class="export-controls" id="exportControls"></div>
           
           <div id="feedbackArea" class="feedback-card hidden">
-            <header><div><h3 id="feedbackTitle">来自效果评估智能体的退回任务</h3><p id="feedbackIntro" class="v6-inline-1">C 已完成评估，本轮不修改策略，只要求 B 对指定创意字段做定向修订。</p></div><span class="chip warn">退回 B 修改</span></header>
+            <header><div><h3 id="feedbackTitle">来自效果评估智能体的退回任务</h3><p id="feedbackIntro" class="v6-inline-1">效果评估智能体已完成评估，请按反馈修改指定创意字段。</p></div><span class="chip warn">退回 B 修改</span></header>
             <div class="feedback-summary"><div class="feedback-metric"><span>evaluation_id</span><b id="feedbackEvalId">—</b></div><div class="feedback-metric"><span>当前 creative</span><b id="feedbackCreative">—</b></div><div class="feedback-metric"><span>策略版本</span><b>锁定策略版本 · 保持锁定</b></div></div>
             <p id="feedbackIssue"><b>问题：</b>—</p>
             <p id="feedbackRequirement"><b>修改要求：</b>—</p>
@@ -60,16 +60,16 @@
             <div class="feedback-actions"><small id="feedbackFootText">开始修改后会创建新版本，不覆盖历史结果。</small><button class="btn primary" id="startRevisionBtn">按反馈开始修改　→</button></div>
           </div>
           <div id="revisionShell" class="revision-shell hidden">
-            <div class="revision-head"><div><h3 id="revisionTitle">创意修订过程</h3><p id="revisionDescription">根据 C 的反馈定向修改被点名的字段；未被反馈的内容与 A 的策略上下文保持锁定。</p></div><div class="revision-state" id="revisionState" aria-live="polite"><i></i><span>等待开始</span></div></div>
+            <div class="revision-head"><div><h3 id="revisionTitle">创意修订过程</h3><p id="revisionDescription">根据效果评估智能体的反馈修改指定内容。</p></div><div class="revision-state" id="revisionState" aria-live="polite"><i></i><span>等待开始</span></div></div>
             <ul class="revision-workflow" id="revisionWorkflow">
               <li><span>01 · RECEIVE</span><b>接收评估反馈</b><small id="revReceiveNote">确认 feedback 属于当前 task 与当前 creative。</small></li>
-              <li><span>02 · LOCATE</span><b>定位修改字段</b><small id="revLocateNote">只处理 C 明确指出的字段。</small></li>
+              <li><span>02 · LOCATE</span><b>定位修改字段</b><small id="revLocateNote">只处理效果评估智能体指出的字段。</small></li>
               <li><span>03 · LOCK</span><b>锁定策略与事实</b><small id="revLockNote">锁定策略版本、卖点、预算和渠道不允许被改写。</small></li>
               <li><span>04 · REVISE</span><b>生成修订内容</b><small id="revReviseNote">围绕本轮反馈定向优化表达。</small></li>
               <li><span>05 · VERIFY</span><b>整理修订结果</b><small id="revVerifyNote">整理本次修改，准备交付。</small></li>
             </ul>
             <div class="revision-meter"><i id="revisionMeter"></i></div>
-            <div class="revision-foot"><span id="revisionFoot">等待开始处理 C 的反馈…</span><b id="revisionPercent">0%</b></div>
+            <div class="revision-foot"><span id="revisionFoot">等待开始处理评估反馈…</span><b id="revisionPercent">0%</b></div>
             <div id="revisionDiff" class="revision-diff hidden"><div class="diff-card"><small id="diffBeforeLabel">BEFORE</small><b>社群主文案</b><p id="diffBeforeText">—</p></div><div class="diff-arrow">→</div><div class="diff-card after"><small id="diffAfterLabel">AFTER</small><b id="diffAfterTitle">修订结果</b><p id="diffAfterText">—</p></div></div>
             <div id="revisionNote" class="revision-note hidden"><span id="revisionNoteText">—</span><span class="chip good" id="revisionNoteChip">新版本已创建</span></div>
           </div>
@@ -88,7 +88,7 @@
               <li><span>02 · CHANNEL</span><b>确认渠道任务</b><small>明确当前渠道的内容角色、行动入口和资源边界。</small></li>
               <li><span>03 · CREATE</span><b>生成四类创意</b><small>分别形成主文案、核心短句、海报文字与短视频脚本。</small></li>
               <li><span>04 · GUARD</span><b>整理生成内容</b><small>整理四类创意的文字内容。</small></li>
-              <li><span>05 · READY</span><b>整理结构化结果</b><small>写入 creative 版本信息并准备人工编辑与 C 交付。</small></li>
+              <li><span>05 · READY</span><b>整理结构化结果</b><small>写入 creative 版本信息并准备人工编辑与效果评估交付。</small></li>
             </ul>
             <div class="revision-meter"><i id="generationMeter"></i></div>
             <div class="revision-foot"><span id="generationFoot">等待开始生成渠道创意…</span><b id="generationPercent">0%</b></div>
@@ -109,14 +109,14 @@
             </div>
           </div>
 
-          <div class="delivery-ready delivery-compact"><h3 id="deliveryTitle">交付检查智能体</h3><button class="btn primary" id="packageBtn" disabled>检查并交付效果评估智能体 →</button></div>
+          <div class="delivery-ready delivery-compact"><h3 id="deliveryTitle">效果评估</h3><button class="btn primary" id="packageBtn" disabled>检查并交付效果评估智能体 →</button></div>
         </div>
       </div>
     </div>
   </section>
 
   <section id="view-evaluation" class="view hidden">
-    <div class="panel"><div class="panel-head"><div><h2>效果评估交付</h2><p id="evaluationSubtitle">B 的创意已经进入 C 的输入队列；这里保留任务、策略与创意版本引用，避免评估错版本。</p></div><span class="chip good" id="evaluationChip">B → C 已交付</span></div><div class="delivered-state"><div class="big-check" id="evaluationIcon">✓</div><h3 id="evaluationTitle">创意结果已交付效果评估智能体</h3><p id="evaluationBody">C 将接收原始需求、对应策略结果和当前创意结果，并在五维评分、事实风险与渠道约束检查后给出通过、修改或停止建议。</p><div class="version-chain v6-inline-2"><span>—</span><i>→</i><span>锁定策略版本</span><i>→</i><span id="evalCreativeVersion">creative v1</span><i>→</i><span id="evalRoundState">evaluation round 1 pending</span></div><div class="delivered-actions" id="evaluationActions"><button class="btn" id="backFromEvaluation">返回创意工作台</button><button class="btn warning" id="simulateReject">模拟 C 打回修改　↩</button><button class="btn primary success" id="simulatePass">模拟 C 评估通过　✓</button></div></div></div>
+    <div class="panel"><div class="panel-head"><div><h2>效果评估交付</h2><p id="evaluationSubtitle">创意方案已交付，可进入效果评估查看进度和结论。</p></div><span class="chip good" id="evaluationChip">已交付效果评估</span></div><div class="delivered-state"><div class="big-check" id="evaluationIcon">✓</div><h3 id="evaluationTitle">创意结果已交付效果评估智能体</h3><p id="evaluationBody">效果评估智能体将接收原始需求、对应策略结果和当前创意结果，并在五维评分、事实风险与渠道约束检查后给出通过、修改或停止建议。</p><div class="version-chain v6-inline-2"><span>—</span><i>→</i><span>锁定策略版本</span><i>→</i><span id="evalCreativeVersion">creative v1</span><i>→</i><span id="evalRoundState">evaluation round 1 pending</span></div><div class="delivered-actions" id="evaluationActions"><button class="btn" id="backFromEvaluation">返回创意工作台</button><button class="btn primary hidden" id="openEvaluation">查看评估状态 →</button><button class="btn warning" id="simulateReject">模拟退回修改　↩</button><button class="btn primary success" id="simulatePass">模拟评估通过　✓</button></div></div></div>
   </section>
 </main>
 
@@ -136,9 +136,9 @@
 </div>
 <div id="cHandoffModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="cHandoffTitle">
 <div class="modal handoff-simple"><button class="modal-close" id="closeCHandoff" aria-label="关闭">×</button>
-<div class="handoff-hero"><h2 id="cHandoffTitle">把创意交给检查智能体</h2><p class="handoff-description" id="cHandoffDesc">确认创意已准备好，继续下一步。</p>
-<div class="agent-bridge"><div class="agent-node from"><small>广告创意智能体</small><strong id="cBridgeCreative">创意已准备</strong></div><div class="bridge-line"><span class="bridge-arrow">→</span></div><div class="agent-node to"><small>效果评估智能体</small><strong>等待接收创意</strong></div></div></div>
-<div class="modal-body"><div class="handoff-summary-card"><div class="checks" id="creativeDeliveryChecks"></div></div><div class="modal-actions"><span class="chip good" id="creativeDeliveryCount">4 / 4 项准备完成</span><div class="right"><button class="btn" id="cancelCHandoff">继续修改</button><button class="btn primary" id="deliverCBtn">确认交付 →</button></div></div></div></div></div>
+<div class="handoff-hero"><h2 id="cHandoffTitle">把创意交给效果评估智能体</h2><p class="handoff-description" id="cHandoffDesc">确认创意已准备好，继续下一步。</p>
+<div class="agent-bridge"><div class="agent-node from"><small>广告创意智能体</small><strong id="cBridgeCreative">创意已准备</strong></div><div class="bridge-line"><span class="bridge-arrow">→</span></div><div class="agent-node to"><small>效果评估智能体</small><strong>准备评估方案</strong></div></div></div>
+<div class="modal-body"><div class="handoff-summary-card"><div class="checks" id="creativeDeliveryChecks"></div></div><div class="modal-actions"><span class="chip good" id="creativeDeliveryCount">方案已准备</span><div class="right"><button class="btn" id="cancelCHandoff">继续修改</button><button class="btn primary" id="deliverCBtn">确认交付，查看评估 →</button></div></div></div></div></div>
 <div id="issueModal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="issueTitle"><div class="modal issue-modal"><h2 id="issueTitle">请先完成以下调整</h2><div id="issueMessages"></div><button class="btn primary" id="confirmIssues">确定，返回检查</button></div></div>
 <div class="toast" id="toast"></div>
 <script src="/creative-api.js?v=6" defer></script><script src="/creative.js?v=6" defer></script></body></html>

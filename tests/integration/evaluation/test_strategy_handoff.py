@@ -9,6 +9,28 @@ from src.agents.evaluation.examples import make_source
 
 
 class StrategyEvaluationHandoffTests(unittest.TestCase):
+    def test_strategy_change_order_is_consumable_by_existing_A_service(self):
+        from src.agents.evaluation.adapter import strategy_handoff
+        source=make_source(0,'boundary');request=source['rounds'][0]['request']
+        initial=deepcopy(request);initial.update(agent='strategy',strategy=None,creative=None)
+        agent=StrategyAgent(RuleBasedModelClient())
+        strategy=agent.generate(StrategyRequest.from_dict(initial)).to_dict()
+        request['strategy']=strategy
+        request['creative']['data']['strategy_result_id']=strategy['result_id']
+        item=request['creative']['data']['items'][0]
+        request['creative']['data']['items']=[{**deepcopy(item),'channel':c['name']} for c in strategy['data']['channels']]
+        draft=source['rounds'][0]['draft']
+        for dimension in draft['dimension_scores'].values():dimension['score']=70
+        draft['feedback']=[{'target_agent':target,'target_path':position,'issue':'需调整表达','suggestion':'依据原始事实调整','priority':'medium'}
+                           for target,position in [('strategy','strategy.positioning'),('creative','creative.items[0].copy')]]
+        bundle=evaluate_bundle(source);handoff=strategy_handoff(bundle)
+        self.assertEqual({f['target_agent'] for f in handoff['strategy_revision_request']['feedback']},{'strategy'})
+        self.assertEqual(len(handoff['pending_creative_feedback']),1)
+        revised=agent.generate(StrategyRequest.from_dict(handoff['strategy_revision_request'])).to_dict()
+        self.assertEqual(revised['status'],'succeeded',revised.get('error'))
+        self.assertEqual(revised['version'],strategy['version']+1)
+        self.assertEqual(agent.history(request['task_id'])[0],strategy)
+
     def test_published_strategy_response_consumed_without_mutation(self):
         source = make_source(0, "boundary")
         request = source["rounds"][0]["request"]

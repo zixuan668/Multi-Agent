@@ -23,10 +23,10 @@
   const r=state.record,h=r.handoff,c=r.context,s=h.strategy;
   $('pageNote').textContent=c.product_name;
   $('flowBText').textContent=current()?'创意已保存':'策略已接收 · 等待创作';
-  $('flowCText').textContent={pending:'已交付候选包 · 尚未评估',returned:'反馈已返回 B',needs_strategy:'反馈需返回 A',passed:'开发模拟通过',not_passed:'三轮上限 · 已终止'}[r.state]||'尚未评估';
+  $('flowCText').textContent={pending:'已交付 · 评估处理中',returned:'反馈已返回 B',needs_strategy:'反馈需返回 A',passed:'评估通过',not_passed:'评估已终止'}[r.state]||'尚未评估';
   $('channelTabs').replaceChildren();c.channels.forEach(ch=>{const b=node('button',ch.name);b.classList.toggle('active',ch.name===state.channel);b.onclick=()=>{state.channel=ch.name;render();};$('channelTabs').append(b);});
   const ch=c.channels.find(x=>x.name===state.channel);
-  $('briefGrid').replaceChildren();[['传播重点',c.positioning],['目标人群',c.target_audience.segment],['渠道任务',ch?.content_direction],['传播主题',c.marketing_strategy.theme],['原文依据',c.selling_points.map(x=>x.source_quote).join('；')],['发布前约束',c.explicit_constraints||'遵守原始事实与资源边界']].forEach(([k,v])=>{const n=node('div',undefined,'brief-item');n.append(node('span',k),node('b',v));$('briefGrid').append(n);});
+  $('briefGrid').replaceChildren();[['传播重点',c.positioning],['目标人群',c.target_audience.segment],['渠道任务',ch?.content_direction],['传播主题',c.marketing_strategy.theme],['原文依据',c.selling_points.map(x=>x.source_quote).join('；')],['发布前约束',c.explicit_constraints||'遵守原始事实与资源边界']].forEach(([k,v])=>{const n=node('div',undefined,'brief-item');n.append(node('span',k),node('b',String(v??'').split('\n\n【智策需求补充 v1】')[0]));$('briefGrid').append(n);});
  }
  function render(){
   if(!state.record)return;
@@ -54,35 +54,38 @@
   $('generatorStatus').querySelector('span').textContent=state.busy?'AI 正在处理，请稍候…':r.last_error?'上次操作失败，旧版本仍保留':v?'创意已保存':'等待生成';
   const feedback=r.feedback.at(-1);$('feedbackArea').classList.toggle('hidden',!['returned','needs_strategy'].includes(r.state));
   $('feedbackTitle').textContent='来自效果评估智能体的退回任务'+(feedback?.mode==='development/demo only'?'（开发模拟）':'');
-  $('feedbackIntro').textContent=feedback?.mode==='development/demo only'?'这是开发联调的模拟反馈，真实 C 尚未接入。B 只修改指定创意字段。':'只修改指定创意字段，策略保持锁定。';
+  $('feedbackIntro').textContent=feedback?.mode==='development/demo only'?'这是开发联调的模拟反馈，当前为离线模拟，只修改指定创意字段。':'只修改指定创意字段，策略保持锁定。';
   if(feedback){$('feedbackEvalId').textContent=feedback.evaluation_id;$('feedbackCreative').textContent=feedback.creative_result_id;$('feedbackIssue').textContent=feedback.items.map(f=>f.issue).join('；');$('feedbackRequirement').textContent=feedback.items.map(f=>f.suggestion).join('；');$('feedbackPath').textContent=feedback.items.map(f=>f.target_path).join(' / ');$('feedbackTargets').replaceChildren(...feedback.items.map(f=>node('span',`${f.target_path} · ${f.priority}`)));$('feedbackFootText').textContent=r.state==='needs_strategy'?'反馈涉及策略，请返回 A，B 不会修改 strategy':'旧版本保留，定向修订后创建下一版';}
   $('startRevisionBtn').disabled=state.busy||r.state!=='returned';
   if(!state.busy&&!state.revisionVisible)$('revisionShell').classList.add('hidden');
   syncUrl();renderEvaluation();
  }
  function renderEvaluation(){const r=state.record,v=latest(),d=r.deliveries.at(-1),f=r.feedback.at(-1);const status=r.state;
-  $('evaluationChip').textContent={pending:'已交付候选包 · 尚未评估',returned:'开发模拟：退回 B',needs_strategy:'需要返回策略智能体',passed:'开发模拟：通过',not_passed:'第3轮未通过 · 已终止'}[status]||'尚未评估';
+  const demo=f?.mode==='development/demo only';
+  $('evaluationChip').textContent=(demo?'开发模拟 · ':'')+({pending:'已交付 · 评估处理中',returned:'创意需要修改',needs_strategy:'策略需要调整',passed:'评估通过',not_passed:'评估已终止'}[status]||'尚未评估');
   $('evaluationIcon').textContent=status==='passed'?'✓':status==='not_passed'?'■':status==='returned'?'↩':'⋯';
-  $('evaluationTitle').textContent=status==='pending'?`creative v${v.version} 已锁定，等待 C` : status==='not_passed'?'已达到3轮上限，不再创建第4轮':f?$('evaluationChip').textContent:'尚未交付效果评估智能体';
-  $('evaluationBody').textContent=d?(f?'当前为开发模式模拟反馈，真实检查智能体尚未接入。':'创意已交付，等待检查智能体接收。'):'先完成创意，再交付检查智能体。';
-  $('evaluationSubtitle').textContent='真实 C 尚未接入；开发模拟仅用于验证反馈、版本与三轮上限。';
+  $('evaluationTitle').textContent=status==='pending'?'正在交付并评估创意':f?$('evaluationChip').textContent:'尚未交付效果评估智能体';
+  $('evaluationBody').textContent=d?(demo?'当前为开发模拟反馈。':f?'结论已保存，可以进入效果评估查看。':'进入效果评估查看进度和结论。'):'先完成创意，再确认交付。';
+  $('evaluationSubtitle').textContent='创意已交付效果评估';
+  $('evalCreativeVersion').textContent=v?`第 ${v.version} 版创意`:'尚未生成';
+  $('evalRoundState').textContent=f?'评估已完成':'等待结论';
+  $('openEvaluation').classList.toggle('hidden',!d||demo);
   ['simulateReject','simulatePass'].forEach(id=>{$(id).classList.toggle('hidden',!r.demo_enabled);$(id).disabled=status!=='pending'||state.busy;});
  }
+ function openEvaluation(receive=false){location.href='/evaluation/?task_id='+encodeURIComponent(state.task)+(receive?'&receive=1':'');}
  async function load(){state.record=await request(url(state.task,'state'));state.selected=state.record.versions.at(-1)?.result_id;state.channel=state.channel||state.record.context.channels[0].name;if(!state.instructionReady){$('creativeInstruction').value=latest()?.creative_instruction||'';state.instructionReady=true;}render();}
  async function animate(prefix,steps,work,waiting='AI 正在生成创意，请稍候…'){
   $(prefix+'Shell')?.classList.remove('hidden');const nodes=all(`#${prefix}Workflow li`);nodes.forEach(n=>n.classList.remove('active','done'));
-  let settled=false,result,error;
-  const promise=work().then(x=>{settled=true;result=x;},e=>{settled=true;error=e;});
-  for(let n=0;n<nodes.length;n++){
-   // Keep the actual model wait at CREATE/REVISE. Later phases never finish ahead of the server.
-   if(n===nodes.length-2){while(!settled){$(prefix+'State').querySelector('span').textContent=waiting;await sleep(400);}}
-   if(error)break;
-   nodes.forEach((x,j)=>{x.classList.toggle('active',j===n);x.classList.toggle('done',j<n);});
-   $(prefix+'State').querySelector('span').textContent=steps[n];$(prefix+'Foot').textContent=steps[n];$(prefix+'Meter').style.width=((n+1)*100/nodes.length)+'%';$(prefix+'Percent').textContent=Math.round((n+1)*100/nodes.length)+'%';await sleep(650);
-  }
-  await promise;
-  if(error){$(prefix+'State').querySelector('span').textContent='本次未完成，未交付下游';$(prefix+'Meter').style.width='0%';$(prefix+'Percent').textContent='未完成';throw error;}
-  nodes.forEach(n=>{n.classList.remove('active');n.classList.add('done');});$(prefix+'State').querySelector('span').textContent='创意已保存';return result;
+  const progress=(stage,attempt=1)=>{
+   const index=({queued:0,reading:0,generating:prefix==='revision'?3:2,parsing:3,validating:3,saving:4,completed:4})[stage]??0;
+   nodes.forEach((node,j)=>{node.classList.toggle('active',j===index);node.classList.toggle('done',j<index);});
+   const label=stage==='generating'?(attempt>1?'正在修正返回格式…':waiting):steps[index];
+   $(prefix+'State').querySelector('span').textContent=label;$(prefix+'Foot').textContent=label;
+   $(prefix+'Meter').style.width=(index*100/nodes.length)+'%';$(prefix+'Percent').textContent=(stage==='generating'?'生成中':Math.round(index*100/nodes.length)+'%');
+  };
+  progress('queued');
+  try{const result=await work(progress);nodes.forEach(n=>{n.classList.remove('active');n.classList.add('done');});$(prefix+'State').querySelector('span').textContent='创意已保存';$(prefix+'Meter').style.width='100%';$(prefix+'Percent').textContent='100%';return result;}
+  catch(error){$(prefix+'State').querySelector('span').textContent='本次未完成，未交付下游';$(prefix+'Meter').style.width='0%';$(prefix+'Percent').textContent='未完成';throw error;}
  }
  async function operate(action,extra={},prefix='generation'){
   if(state.busy)return;if(action!=='edit'&&dirty()){toast('有未保存编辑，请先保存或取消。');return;}
@@ -90,9 +93,9 @@
   const before=latest();
   try{
    const stages=action==='edit'?['读取人工修改','定位当前创意','整理修改内容','确认文字格式','保存修改']:prefix==='revision'?['接收评估反馈','定位指定字段','锁定策略与其他字段','按反馈生成修订','保存本次修订']:['读取锁定策略上下文','分析当前渠道和创意要求','调用模型生成候选创意','整理模型返回内容','保存创意内容'];
-   await animate(prefix,stages,async()=>{
+   await animate(prefix,stages,async(onProgress)=>{
     await request(url(state.task,'operations'),{action,base_result_id:before?.result_id||null,channel:state.channel,instruction:$('creativeInstruction').value,...extra});
-    while(true){const r=await request(url(state.task,'state'));if(r.job.status==='failed'){const e=new Error(r.job.error.message);Object.assign(e,r.job.error);throw e;}if(r.job.status==='succeeded')return r;await sleep(700);}
+    while(true){const r=await request(url(state.task,'state'));onProgress(r.job.stage,r.job.attempt_count);if(r.job.status==='failed'){const e=new Error(r.job.error.message);Object.assign(e,r.job.error);throw e;}if(r.job.status==='succeeded')return r;await sleep(700);}
    },action==='edit'?'正在保存人工修改，请稍候…':undefined);
    if(action==='edit')delete state.drafts[key(extra.path.split('.').at(-1))];
    const oldId=state.selected;
@@ -106,7 +109,7 @@
   }catch(e){errors(e);await load();}finally{state.busy=false;render();}
  }
  function showDiff(before,after){$('revisionTitle').textContent='本次创意修改';$('revisionState').querySelector('span').textContent='修订已完成并保存';$('revisionFoot').textContent='历史修订记录；当前不在重新调用模型';$('revisionMeter').style.width='100%';$('revisionPercent').textContent='100%';all('#revisionWorkflow li').forEach(n=>{n.classList.remove('active');n.classList.add('done');});const changes=after.edit_trace,feedback=state.record.feedback.find(f=>f.creative_result_id===before.result_id);$('revisionDiff').classList.remove('hidden');$('diffBeforeLabel').textContent='修改前';$('diffAfterLabel').textContent='修改后';$('diffBeforeText').textContent=changes.map(x=>`${x.before}`).join('\n\n');$('diffAfterText').textContent=changes.map(x=>`${x.after}`).join('\n\n');$('revisionNote').classList.remove('hidden');$('revisionNoteText').textContent=after.feedback_applied.map(f=>f.issue+'；'+f.suggestion).join(' / ');$('revisionNoteChip').textContent='新版本已保存';}
- async function transfer(){view('transfer');const names=['正在接收上游任务','正在确认并锁定策略来源','正在读取事实、约束并提炼创意简报','创意工作区准备完成'];const nodes=all('#transferWorkflow li');for(let i=0;i<nodes.length;i++){nodes.forEach((n,j)=>{n.classList.toggle('active',i===j);n.classList.toggle('done',j<i);});$('transferTitle').textContent=names[i];$('transferFoot').textContent=names[i];$('transferMeter').style.width=((i+1)*25)+'%';await sleep(850);}await load();view('creative');}
+ async function transfer(){view('transfer');$('transferTitle').textContent='正在读取已确认策略';$('transferFoot').textContent='正在准备创意工作区';await load();all('#transferWorkflow li').forEach(n=>{n.classList.remove('active');n.classList.add('done');});$('transferMeter').style.width='100%';view('creative');}
  async function copy(text){try{await navigator.clipboard.writeText(text);toast('已复制');}catch{toast('复制未获浏览器允许，请选择文字复制或导出。');}}
  function copyChannel(){const i=item();if(i)copy(Object.keys(fields).map(t=>labels[t]+'\n'+i[fields[t]]).join('\n\n'));}
  function download(json){const v=current();if(!v)return;const text=json?JSON.stringify(v,null,2):['【创意草案，发布前须人工复核】',state.record.context.product_name,`strategy ${v.strategy_result_id} / v${v.strategy_version}`,`creative ${v.result_id} / v${v.version} · 尚未评估`,...v.data.items.flatMap(i=>[i.channel,...Object.keys(fields).map(t=>labels[t]+'\n'+i[fields[t]]),'发布前待确认事项：',...i.pending_confirmations])].join('\n\n');const a=node('a');a.href=URL.createObjectURL(new Blob(['\ufeff',text],{type:json?'application/json':'text/plain;charset=utf-8'}));a.download=`creative-v${v.version}.${json?'json':'txt'}`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
@@ -125,24 +128,48 @@
  $('generateBtn').onclick=$('regenerateBtn').onclick=()=>operate('generate');$('startRevisionBtn').onclick=()=>operate('revision',{},'revision');
  $('packageBtn').onclick=async()=>{
   if(dirty()){errors({message:'你有尚未保存的修改，请先保存或取消编辑。'});return;}
+  if(state.busy)return;
+  if(state.record?.state==='pending'){if(state.record.demo_enabled)view('evaluation');else openEvaluation();return;}
+  if(['passed','not_passed','needs_strategy'].includes(state.record?.state)){openEvaluation();return;}
+  if(state.record?.state==='returned'){toast('请先按评估反馈修订创意。');return;}
   try{const v=current(),p=await request(url(state.task,'package')+'?result_id='+encodeURIComponent(v.result_id));
    const host=$('creativeDeliveryChecks');host.replaceChildren();
-   [['广告文案','copy'],['核心短句','slogan'],['海报文字','poster_concept'],['短视频脚本','video_script']].forEach(([title,field])=>{
-    const count=p.creative.data.items.filter(i=>typeof i[field]==='string'&&i[field].trim()).length;
-    const row=node('div',undefined,'handoff-summary-row');const content=node('div');content.append(node('strong',title),node('p',`${count} 个渠道已准备`));row.append(content,node('span','√','summary-check'));host.append(row);
+   const clean=x=>String(x||'').split('\n\n【智策需求补充 v1】')[0];
+   const summary=[['产品与目标',`${p.requirements.product_name}：${clean(p.requirements.marketing_goal).split('\n').filter(Boolean).join(' · ')}`],
+    ['渠道与创意',p.creative.data.items.map(i=>`${i.channel} · ${i.slogan}`).join('\n')],
+    ['本次评估内容','广告文案、核心短句、海报文字和短视频脚本'],
+    ['需要遵守的要求',clean(p.requirements.special_requirements)||'使用已确认的产品事实与资源']];
+   summary.forEach(([title,description])=>{
+    const row=node('div',undefined,'handoff-summary-row');const content=node('div');content.append(node('strong',title),node('p',description));row.append(content,node('span','√','summary-check'));host.append(row);
    });
-   $('cBridgeCreative').textContent='本次创意已准备';$('cHandoffDesc').textContent=p.requirements.product_name;
-   $('cHandoffModal').classList.remove('hidden');$('deliverCBtn').disabled=false;
+   $('cBridgeCreative').textContent='创意方案已完成';$('cHandoffDesc').textContent='确认本次方案，查看评分与修改建议。';
+   const modal=$('cHandoffModal');modal.classList.remove('hidden');modal.tabIndex=-1;modal.focus();$('deliverCBtn').disabled=false;
+   modal.onkeydown=e=>{if(e.key==='Tab'){const buttons=[...modal.querySelectorAll('button')].filter(b=>!b.disabled),first=buttons[0],last=buttons.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}};
   }catch(e){errors(e);}
  };
- ['closeCHandoff','cancelCHandoff'].forEach(id=>$(id).onclick=()=>$('cHandoffModal').classList.add('hidden'));
- $('deliverCBtn').onclick=async()=>{if(dirty()){errors({message:'请先保存人工编辑'});return;}$('deliverCBtn').disabled=true;try{await request(url(state.task,'delivery'),{base_result_id:latest().result_id});await sleep(700);$('cHandoffModal').classList.add('hidden');await load();view('evaluation');}catch(e){errors(e);}finally{$('deliverCBtn').disabled=false;}};
+ ['closeCHandoff','cancelCHandoff'].forEach(id=>$(id).onclick=()=>{$('cHandoffModal').classList.add('hidden');$('packageBtn').focus();});
+ $('deliverCBtn').onclick=async()=>{
+  if(state.busy)return;if(dirty()){errors({message:'请先保存人工编辑'});return;}
+  state.busy=true;$('deliverCBtn').disabled=true;$('deliverCBtn').textContent='正在交付…';
+  try{
+   const delivery=await request(url(state.task,'delivery'),{base_result_id:latest().result_id});
+   if(delivery.evaluation_error)throw delivery.evaluation_error;
+   if(delivery.evaluation_job){
+    // Display-only receipt avoids an empty first view; C rereads server state.
+    if(delivery.package)try{sessionStorage.setItem('zhice.evaluation.receipt.'+state.task,JSON.stringify({task_id:state.task,received_at:Date.now(),product_name:delivery.package.requirements.product_name,creative:delivery.package.creative}));}catch{}
+    openEvaluation(true);return;
+   }
+   $('cHandoffModal').classList.add('hidden');await load();view('evaluation');
+  }catch(e){state.busy=false;render();errors(e);}
+  finally{state.busy=false;$('deliverCBtn').disabled=false;$('deliverCBtn').textContent='确认交付，查看评估 →';}
+ };
  async function demo(decision){if(state.busy)return;state.busy=true;render();try{await request(url(state.task,'demo-feedback'),{base_result_id:latest().result_id,decision});await sleep(800);await load();view(decision==='return'&&state.record.state==='returned'?'creative':'evaluation');}catch(e){errors(e);}finally{state.busy=false;render();}}
  $('simulateReject').onclick=()=>demo('return');$('simulatePass').onclick=()=>demo('pass');$('backFromEvaluation').onclick=()=>view('creative');
- all('[data-nav]').forEach(b=>b.onclick=()=>{if(b.dataset.nav==='strategy'){location.href='/workspace';return;}if(b.dataset.nav==='evaluation'&&!state.record?.deliveries.length){toast('请先检查并交付当前创意版本。');return;}view(b.dataset.nav);});
+ $('openEvaluation').onclick=()=>openEvaluation();
+ all('[data-nav]').forEach(b=>b.onclick=()=>{if(b.dataset.nav==='strategy'){location.href='/workspace';return;}if(b.dataset.nav==='evaluation'){if(!state.record?.deliveries.length){toast('请先确认交付本次创意。');return;}if(state.record.feedback.at(-1)?.mode==='real_c'||state.record.state==='pending'&&!state.record.demo_enabled){openEvaluation();return;}}view(b.dataset.nav);});
  async function entryView(){view('strategy');const h=$('strategySummary');h.replaceChildren(node('h2','从策略开始创作'),node('p','先在策略页面完成需求，再交付创意智能体。'));const b=node('button','前往策略页面','btn primary');b.onclick=()=>location.href='/workspace';h.append(b);}
  window.addEventListener('beforeunload',e=>{if(dirty()){e.preventDefault();e.returnValue='';}});
  $('confirmIssues').onclick=()=>{$('issueModal').classList.add('hidden');$('cHandoffModal').classList.add('hidden');view('creative');};document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('cHandoffModal').classList.add('hidden');$('issueModal').classList.add('hidden');}});
- async function init(){await request('/api/session');if(!state.task){await entryView();return;}try{state.drafts=JSON.parse(sessionStorage.getItem('b-drafts-'+state.task)||'{}');}catch{}state.selected=null;setTab(params.get('type') in fields?params.get('type'):'copy');try{await load();if(params.get('receive')==='1')await transfer();else{view('creative');if(state.record.job?.status==='running'){state.busy=true;while(state.record.job.status==='running'){await sleep(700);await load();}state.busy=false;render();}}}catch(e){if(e.code==='HANDOFF_REQUIRED'){view('strategy');$('strategySummary').replaceChildren(node('h2','接收真实策略'),node('p','先校验当前任务和来源，再确认进入 B。'));const b=node('button','校验并接收策略','btn primary');b.onclick=()=>window.CreativeHandoff.open(state.task,transfer);$('strategySummary').append(b);await window.CreativeHandoff.open(state.task,transfer);}else{await entryView();errors(e);}}}
+ async function init(){await request('/api/session');if(!state.task){await entryView();return;}try{state.drafts=JSON.parse(sessionStorage.getItem('b-drafts-'+state.task)||'{}');}catch{}state.selected=null;setTab(params.get('type') in fields?params.get('type'):'copy');try{await load();if(params.get('receive')==='1')await transfer();else{view('creative');if(state.record.state==='pending'&&!state.record.demo_enabled){openEvaluation();return;}if(state.record.job?.status==='running'){state.busy=true;while(state.record.job.status==='running'){await sleep(700);await load();}state.busy=false;render();}}}catch(e){if(e.code==='HANDOFF_REQUIRED'){view('strategy');$('strategySummary').replaceChildren(node('h2','接收真实策略'),node('p','先校验当前任务和来源，再确认进入 B。'));const b=node('button','校验并接收策略','btn primary');b.onclick=()=>window.CreativeHandoff.open(state.task,transfer);$('strategySummary').append(b);await window.CreativeHandoff.open(state.task,transfer);}else{await entryView();errors(e);}}}
  init().catch(errors);
 })();

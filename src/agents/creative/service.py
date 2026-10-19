@@ -14,7 +14,10 @@ class CreativeAgent:
         params={"action":action,"requirements":handoff["requirements"],"strategy":handoff["strategy"],
                 "task_id":handoff["task_id"],"config_version":handoff["config_version"],
                 "context":context,"channel":channel,"creative_instruction":instruction,
-                "previous":previous,"allowed_paths":paths,"feedback":feedback}
+                # Edit history repeats entire before/after texts; the model only
+                # needs the referenced saved version and its actual content.
+                "previous":({k:deepcopy(previous[k]) for k in ('result_id','version','round_no','strategy_result_id','strategy_version','data') if k in previous} if previous else None),
+                "allowed_paths":paths,"feedback":feedback}
         for attempt in (1,2):
             try:
                 on_stage("generating",attempt)

@@ -16,6 +16,9 @@ def main():
             value = evaluate_bundle(raw)
             print(json.dumps({"valid": True, "mode": "offline", "rounds": len(value["records"]), "assessment_status": value["final"]["assessment_status"]}, ensure_ascii=False))
         else:
+            if raw.get('schema_version')=='b-to-c-internal-candidate-v1':
+                from .adapter import from_b_package
+                raw=from_b_package(raw,'handoff-check-only')
             request = validate_handoff(raw)
             print(json.dumps({"valid": True, "task_id": request["task_id"], "strategy_result_id": request["strategy"]["result_id"], "creative_result_id": request["creative"]["result_id"]}, ensure_ascii=False))
         return 0

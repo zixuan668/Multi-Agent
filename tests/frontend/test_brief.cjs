@@ -60,7 +60,7 @@ for(const file of ['GUST-FONT-LICENSE.txt','LPPL.txt','MANIFEST-TeX-Gyre-Heros.t
 assert.ok(styles.includes('font: 12px/1.8 var(--workspace-font)'),'JSON display uses the workspace fonts too');
 
 class Element {
-  constructor() { this.value='';this.textContent='';this.style={};this.attrs={};this.dataset={};this.children=[];this.listeners={};this.classes=new Set();this.classList={toggle:(name,force)=>force?this.classes.add(name):this.classes.delete(name),contains:name=>this.classes.has(name)}; }
+  constructor() { this.value='';this.textContent='';this.style={};this.attrs={};this.dataset={};this.children=[];this.listeners={};this.classes=new Set();this.classList={add:name=>this.classes.add(name),remove:name=>this.classes.delete(name),toggle:(name,force)=>force?this.classes.add(name):this.classes.delete(name),contains:name=>this.classes.has(name)}; }
   addEventListener(name,handler){this.listeners[name]=handler;}
   setAttribute(name,value){this.attrs[name]=value;} removeAttribute(name){delete this.attrs[name];}
   append(...nodes){this.children.push(...nodes);} replaceChildren(...nodes){this.children=nodes;}
@@ -73,6 +73,15 @@ vm.runInContext(fs.readFileSync(path.join(root,'web/examples.js'),'utf8'),contex
 vm.runInContext(fs.readFileSync(path.join(root,'web/presentation.js'),'utf8'),context);
 const script=fs.readFileSync(path.join(root,'web/app.js'),'utf8');
 vm.runInContext(script.slice(0,script.indexOf('renderTemplates();restoreDraft();')),context);
+context.localStorage={setItem:()=>{}};
+for(const template of require('../../web/examples.js').templates){
+  context.templateId=template.id;
+  vm.runInContext('fillTemplate(templateId)',context);
+  assert.equal(elements.get('productName').value,template.values.productName,'real template fills DOM without treating periodMode as an element');
+  assert.equal(vm.runInContext('periodMode',context),template.values.periodMode);
+  for(const element of elements.values())element.value=String(element.value);
+  assert.equal(vm.runInContext('validateForm().length',context),0,'filled template is submittable');
+}
 function setValues(values){for(const id of brief.fields)elements.get(id).value=String(values[id]??'');context.choice=values.periodMode||'';vm.runInContext('periodMode=choice',context);}
 setValues(fixture);
 assert.equal(vm.runInContext('validateForm().length',context),0,'complete intake passes real UI validation');

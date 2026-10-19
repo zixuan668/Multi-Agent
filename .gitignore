@@ -5,6 +5,7 @@ __pycache__/
 .env.*
 !.env.example
 !.env.creative.example
+!.env.evaluation.example
 *.pem
 *.key
 

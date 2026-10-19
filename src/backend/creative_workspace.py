@@ -16,6 +16,7 @@ def now(): return datetime.now(timezone.utc).isoformat().replace('+00:00','Z')
 class CreativeWorkspace:
     def __init__(self,tasks,provider=None,*,enabled=True,demo=False):
         self.tasks=tasks; self.provider=provider; self.enabled=enabled; self.demo=demo
+        self.evaluation_dispatch = None
         self._records={}; self._lock=RLock(); self._pool=ThreadPoolExecutor(max_workers=3,thread_name_prefix="creative")
 
     def _auth(self,task_id,scope): return self.tasks.get(task_id,scope)
@@ -172,12 +173,64 @@ class CreativeWorkspace:
     def deliver(self,task_id,scope,base):
         with self._lock:
             package=self.package(task_id,scope,base);r=self._records[(scope,task_id)]
-            if r['state']=='pending': return deepcopy(r['deliveries'][-1])
-            delivery={'delivery_id':'delivery-'+uuid4().hex,'created_at':now(),'status':'pending',
-                      'evaluation_id':None,'mode':'pending_real_c','package':package}
-            r['deliveries'].append(delivery);r['state']='pending'
-            r['events'].append({'stage':'delivered_to_c','result_id':base,'created_at':now()})
-            return deepcopy(delivery)
+            if r['state']=='pending':
+                delivery=deepcopy(r['deliveries'][-1])
+            else:
+                delivery={'delivery_id':'delivery-'+uuid4().hex,'created_at':now(),'status':'pending',
+                          'evaluation_id':None,'mode':'pending_real_c','package':package}
+                r['deliveries'].append(delivery);r['state']='pending'
+                r['events'].append({'stage':'delivered_to_c','result_id':base,'created_at':now()})
+                delivery=deepcopy(delivery)
+        # Dispatch outside B's lock: C finishes on another worker and calls back.
+        if self.evaluation_dispatch:
+            try:
+                delivery['evaluation_job']=self.evaluation_dispatch(delivery,scope)
+            except ValueError as exc:
+                delivery['evaluation_error']={'code':getattr(exc,'code','INPUT_INVALID'),'message':str(exc)}
+        return delivery
+
+    def apply_evaluation(self,task_id,scope,delivery_id,bundle):
+        """Trusted C coordinator entry, never exposed as a browser feedback API."""
+        from src.agents.evaluation.adapter import feedback_for_b
+        self._auth(task_id,scope)
+        evaluation=bundle['final']['evaluation'];data=evaluation['data']
+        with self._lock:
+            r=self._records.get((scope,task_id))
+            if not r or not r['deliveries']: raise CreativeError('当前没有待评估交付','DELIVERY_REQUIRED')
+            delivery=r['deliveries'][-1]
+            if (delivery['delivery_id']!=delivery_id or evaluation['task_id']!=task_id
+                    or data['creative_result_id']!=delivery['package']['creative']['result_id']
+                    or data['strategy_result_id']!=delivery['package']['strategy']['result_id']
+                    or evaluation['round_no']!=delivery['package']['round_no']):
+                raise CreativeError('评估回传与交付版本或轮次不一致','STALE_VERSION')
+            if delivery['evaluation_id']==evaluation['result_id']:
+                return deepcopy(r['feedback'][-1])
+            if r['state']!='pending' or delivery['evaluation_id'] is not None:
+                raise CreativeError('拒绝过期或重复评估覆盖','STALE_VERSION')
+            items=feedback_for_b(evaluation,bundle=bundle)
+            current=self._current(r,data['creative_result_id'])
+            items=[f for f in items if f['target_agent']=='strategy' or int(f['target_path'].split('[')[1].split(']')[0])<len(current['data']['items'])]
+            # B accepts at most 15 paths per revision. Keep the complete report
+            # and deferred issues, instead of turning a useful C review into a
+            # technical failure or silently discarding its remaining findings.
+            items.sort(key=lambda f: {'high':0,'medium':1,'low':2}[f['priority']])
+            deferred=deepcopy(items[15:]);items=items[:15]
+            action=data['decision']
+            state={'accept':'passed','regenerate_creative':'returned','regenerate_strategy':'needs_strategy',
+                   'stop_not_passed':'not_passed','stop_needs_review':'not_passed'}[action]
+            if state=='returned': feedback_check(items,current)
+            feedback={'evaluation_id':evaluation['result_id'],'mode':'real_c','task_id':task_id,
+                      'creative_result_id':data['creative_result_id'],'strategy_result_id':data['strategy_result_id'],
+                      'round_no':evaluation['round_no'],'decision':'pass' if action=='accept' else 'return',
+                      'items':deepcopy(items),'created_at':evaluation['created_at'],'scores':deepcopy(data['dimension_scores']),
+                      'total_score':data['total_score'],'risks':deepcopy(data['risks']),'final_status':state,
+                      'assessment_status':bundle['final']['assessment_status'],
+                      'selected_evaluation_id':bundle['final']['selected_evaluation_id'],
+                      'deferred_items':deferred}
+            r['feedback'].append(feedback);r['state']=state
+            delivery.update(status=state,evaluation_id=evaluation['result_id'],mode='real_c')
+            r['events'].append({'stage':'real_c_feedback','evaluation_id':evaluation['result_id'],'created_at':now()})
+            return deepcopy(feedback)
 
     def feedback(self,task_id,scope,base,payload,*,demo=False):
         self._auth(task_id,scope)

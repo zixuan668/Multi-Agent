@@ -10,7 +10,7 @@ from .examples import SCENARIOS, make_source, products
 from .service import evaluate_bundle
 
 WEB_ROOT = Path(__file__).resolve().parents[3] / "web/evaluation"
-ASSETS = {"index.html", "style.css", "app.js", "api.js", "particles.js", "favicon.svg"}
+ASSETS = {"index.html", "style.css", "app.js", "api.js", "particles.js", "presentation.js", "favicon.svg"}
 
 
 class EvaluationPreviewHandler(SimpleHTTPRequestHandler):

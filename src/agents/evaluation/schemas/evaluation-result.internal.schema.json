@@ -1,0 +1,362 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zhice.example/internal/evaluation-result.internal.schema.json",
+  "$comment": "C integration candidate, not a replacement of packages/contracts. Technical failures use job.error instead of a successful evaluation response.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "task_id",
+    "agent",
+    "round_no",
+    "attempt_count",
+    "status",
+    "result_id",
+    "version",
+    "data",
+    "error",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "agent": {
+      "const": "evaluation"
+    },
+    "round_no": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3
+    },
+    "attempt_count": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3
+    },
+    "status": {
+      "const": "succeeded"
+    },
+    "result_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "strategy_result_id",
+        "creative_result_id",
+        "dimension_scores",
+        "total_score",
+        "risks",
+        "feedback",
+        "recommended_action",
+        "decision"
+      ],
+      "properties": {
+        "strategy_result_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "creative_result_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "dimension_scores": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "attraction",
+            "audience_fit",
+            "clarity",
+            "channel_fit",
+            "call_to_action"
+          ],
+          "properties": {
+            "attraction": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "score",
+                "reason",
+                "target_path"
+              ],
+              "properties": {
+                "score": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1000
+                },
+                "target_path": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1000
+                }
+              }
+            },
+            "audience_fit": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "score",
+                "reason",
+                "target_path"
+              ],
+              "properties": {
+                "score": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1000
+                },
+                "target_path": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1000
+                }
+              }
+            },
+            "clarity": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "score",
+                "reason",
+                "target_path"
+              ],
+              "properties": {
+                "score": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1000
+                },
+                "target_path": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1000
+                }
+              }
+            },
+            "channel_fit": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "score",
+                "reason",
+                "target_path"
+              ],
+              "properties": {
+                "score": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1000
+                },
+                "target_path": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1000
+                }
+              }
+            },
+            "call_to_action": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "score",
+                "reason",
+                "target_path"
+              ],
+              "properties": {
+                "score": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1000
+                },
+                "target_path": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 1000
+                }
+              }
+            }
+          }
+        },
+        "total_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "risks": {
+          "type": "array",
+          "maxItems": 120,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "category",
+              "severity",
+              "target_path",
+              "evidence",
+              "description"
+            ],
+            "properties": {
+              "category": {
+                "enum": [
+                  "fact",
+                  "constraint",
+                  "compliance",
+                  "brand",
+                  "audience"
+                ]
+              },
+              "severity": {
+                "enum": [
+                  "low",
+                  "medium",
+                  "high"
+                ]
+              },
+              "target_path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              "evidence": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              }
+            }
+          }
+        },
+        "feedback": {
+          "type": "array",
+          "maxItems": 200,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "target_agent",
+              "target_path",
+              "issue",
+              "suggestion",
+              "priority",
+              "feedback_id",
+              "evaluation_id",
+              "resolved"
+            ],
+            "properties": {
+              "target_agent": {
+                "enum": [
+                  "strategy",
+                  "creative"
+                ]
+              },
+              "target_path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              "issue": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              "suggestion": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              "priority": {
+                "enum": [
+                  "low",
+                  "medium",
+                  "high"
+                ]
+              },
+              "feedback_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              "evaluation_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000
+              },
+              "resolved": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "recommended_action": {
+          "enum": [
+            "accept",
+            "regenerate_creative",
+            "regenerate_strategy"
+          ]
+        },
+        "decision": {
+          "enum": [
+            "accept",
+            "regenerate_creative",
+            "regenerate_strategy",
+            "stop_not_passed",
+            "stop_needs_review"
+          ]
+        }
+      }
+    },
+    "error": {
+      "type": "null"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

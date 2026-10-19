@@ -5,6 +5,16 @@ from src.agents.evaluation.examples import make_source, SCENARIOS
 
 
 class EvaluationReplayTests(unittest.TestCase):
+    def test_model_cannot_downgrade_unconfirmed_feature_to_pass(self):
+        source=make_source(0,'boundary')
+        row=source['rounds'][0]
+        row['draft']['risks']=[{'category':'fact','severity':'low','target_path':'creative.items[0].copy',
+                               'evidence':'跨设备同步','description':'创意暗示原始需求未确认的跨设备同步功能'}]
+        result=evaluate_bundle(source)
+        self.assertEqual(result['final']['decision'],'regenerate_creative')
+        self.assertEqual(result['final']['evaluation']['data']['risks'][0]['severity'],'high')
+        self.assertEqual(source['rounds'][0]['draft']['risks'][0]['severity'],'low')
+
     def test_all_five_products_and_scenarios(self):
         expected = {"improve": "passed", "strategy": "passed", "risk": "not_passed", "review": "needs_review", "boundary": "passed"}
         for product in range(5):
