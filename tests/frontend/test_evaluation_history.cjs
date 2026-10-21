@@ -1,0 +1,38 @@
+const assert=require('node:assert/strict');
+const path=require('node:path');
+const {pathToFileURL}=require('node:url');
+
+(async()=>{
+ const evaluation=await import(pathToFileURL(path.resolve('web/campaign/evaluation.js')));
+ const history=await import(pathToFileURL(path.resolve('web/campaign/history.js')));
+ const presentation=await import(pathToFileURL(path.resolve('web/campaign/presentation.js')));
+ const row={round_no:1,decision:'stop',evaluation:{data:{total_score:91,risks:[{severity:'high'}],dimension_scores:Object.fromEntries(Object.keys(presentation.dimensions).map(key=>[key,{score:91,reason:'<script>',evidence:'实际原文'}]))}},feedback_snapshot:[]};
+ const task={task_id:'test',stage:'completed',rounds:[row],config_snapshot:{provider:'compatible',pass_threshold:80},image_jobs:[{status:'succeeded'}]};
+ const html=evaluation.evaluationOverview(task,row);
+ assert.ok(html.includes('第三位智能体 · 毛小纯'));
+ assert.ok(html.includes('存在严重风险'));
+ assert.ok(!html.includes('通过草稿评审'));
+ assert.ok(html.includes('五维评分'));
+ assert.ok(!html.includes('style='));
+ assert.ok(html.includes('stroke-dasharray="91 100"'));
+ assert.ok(html.includes('value="91"'));
+ assert.equal((html.match(/class="evaluation-dimension"/g)||[]).length,5);
+ assert.ok(html.includes('&lt;script&gt;'));
+ assert.ok(!html.includes('<script>'));
+ assert.ok(html.includes('AI 宣传图仍需人工核对'));
+ assert.ok(evaluation.reviewSpotlight(task,row).includes('查看完整评估'));
+ assert.ok(evaluation.evaluationHub([]).includes('还没有已完成的评估'));
+ const listed={task_id:'safe',product_name:'<产品>',status:'approved',deletable:true,review:{round_no:1,total_score:91,high_risks:1,provider:'offline'}};
+ const hub=evaluation.evaluationHub([listed]);
+ assert.ok(hub.includes('data-review-task="safe"'));
+ assert.ok(hub.includes('离线规则结果'));
+ assert.ok(hub.includes('严重风险，不能只看分数'));
+ const item=history.historyMarkup([listed],'safe');
+ assert.ok(item.includes('data-history-delete="safe"'));
+ assert.ok(item.includes('aria-current="page"'));
+ assert.ok(item.includes('&lt;产品&gt;'));
+ assert.ok(!item.includes('<产品>'));
+ assert.ok(history.historyMarkup([{...listed,deletable:false}]).includes('disabled'));
+ assert.ok(history.trashMarkup([listed]).includes('data-history-restore="safe"'));
+ console.log('Evaluation and history: visible five-dimension review, risk veto, real-task entry, safe deletion and restore markup passed.');
+})().catch(error=>{console.error(error);process.exitCode=1;});

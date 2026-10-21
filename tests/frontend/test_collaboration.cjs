@@ -1,0 +1,35 @@
+const assert=require('node:assert/strict');
+const path=require('node:path');
+const {pathToFileURL}=require('node:url');
+
+(async()=>{
+ const ui=await import(pathToFileURL(path.resolve('web/campaign/collaboration.js')));
+ const task={config_version:'current',status:'running',stage:'creative',round_no:1,rounds:[],events:[{event_id:'first',agent:'human',kind:'brief',message:'<script>alert(1)</script>',round_no:1,time:new Date().toISOString()}],feedback:[],config_snapshot:{max_rounds:3,max_model_calls:16,max_seconds:360},usage:{model_calls:2,active_seconds:10}};
+ const html=ui.collaborationMarkup(task);
+ const repeated={kind:'progress',agent:'strategy',round_no:1,message:'正在生成'};
+ const delivered={...repeated,kind:'succeeded'};
+ const events=[repeated,{kind:'model_call'},repeated,delivered,repeated,{...repeated,round_no:2},{...repeated,agent:'creative'}];
+ assert.equal(ui.collaborationEvents(events).length,5);
+ assert.equal(events.length,7);
+ assert.ok(html.includes('&lt;script&gt;'));
+ assert.ok(!html.includes('<script>'));
+ const team=ui.teamMarkup(task);
+ for(const name of ['李智信','李莉','毛小纯'])assert.ok(team.includes(name));
+ assert.ok(team.includes('正在工作'));
+ assert.equal(ui.activeActor({...task,status:'pending',stage:'queued',rounds:[{strategy:{},creative:{},evaluation:{},decision:'regenerate_creative'}]}),'creative');
+ assert.equal(ui.activeActor({...task,status:'pending',stage:'queued',rounds:[{strategy:{},direction_choice:{}}]}),'creative');
+ assert.equal(ui.canRevise(task,'current'),true);
+ assert.equal(ui.canRevise(task,'other'),false);
+ assert.equal(ui.canRevise({...task,round_no:3},'current'),false);
+ const first={round_no:1,feedback_snapshot:[{feedback_id:'old'}],strategy:{data:{positioning:'原定位'}},creative:{data:{items:[{channel:'校园',headline:'旧标题',body:'正文',call_to_action:'查看介绍',visual_brief:{subject:'产品'}}]}}};
+ const second=structuredClone(first);second.round_no=2;second.creative.data.items[0].headline='新标题';
+ const history={...task,rounds:[first,second],feedback:[{feedback_id:'new',created_round:2}]};
+ assert.deepEqual(ui.roundFeedback(history,first),[{feedback_id:'old'}]);
+ assert.equal(ui.versionChanges(history,second).length,1);
+ assert.ok(ui.comparisonMarkup(history,second).includes('旧标题'));
+ assert.ok(ui.comparisonMarkup(history,second).includes('新标题'));
+ const choices={...task,status:'awaiting_direction',rounds:[{directions:[{option_id:'direction-1',title:'<方案>',idea:'场景切入',headline:'试写标题',rationale:'依据'}]}]};
+ assert.ok(ui.directionsMarkup(choices).includes('&lt;方案&gt;'));
+ assert.ok(ui.directionsMarkup(choices).includes('data-direction="direction-1"'));
+ console.log('Collaboration frontend: named team, safe messages, scoped revision, historical feedback, version comparison and choices passed.');
+})().catch(error=>{console.error(error);process.exitCode=1;});

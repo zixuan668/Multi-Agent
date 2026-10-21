@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#05060a">
+  <meta name="description" content="让策略、创意与评审共同完成一份有依据的营销方案。">
+  <title>智策营销 · 协作创作台</title>
+  <link rel="icon" href="/evaluation/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/campaign/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到创作内容</a>
+  <aside class="sidebar" id="workspace-sidebar" aria-label="任务导航" hidden inert>
+    <button id="sidebar-close" class="navigation-toggle sidebar-close" type="button">收起侧栏 <span aria-hidden="true">×</span></button>
+    <div class="sidebar-head"><a class="brand" href="/" aria-label="智策营销首页"><span class="brand-symbol" aria-hidden="true"><i></i><i></i><i></i></span><strong>智策营销</strong></a><button id="new-task" class="button primary" type="button">＋ 新建营销任务</button></div>
+    <button class="workspace-nav" data-evaluation-hub type="button">效果评估 <span>毛小纯</span></button>
+    <details class="history-drawer" open><summary>最近任务<span id="task-count"></span></summary><div class="history-tools"><button id="clear-history" type="button">清空历史</button><button id="open-trash" type="button">回收站</button></div><div id="task-list" aria-label="任务历史"></div></details>
+    <div class="sidebar-foot">智策营销 · AI 协作空间</div>
+  </aside>
+  <button id="sidebar-backdrop" class="sidebar-backdrop" aria-label="关闭任务导航" type="button" hidden></button>
+  <div class="app-shell">
+    <header class="topbar"><button id="sidebar-toggle" class="navigation-toggle" type="button" aria-controls="workspace-sidebar" aria-expanded="false"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M9 4v16" stroke="currentColor" stroke-width="1.7"/></svg><span>展开侧栏</span></button><span class="workspace-label">营销工作空间</span><button class="plain-button" data-evaluation-hub type="button">效果评估</button><span id="provider-label" class="mode-label">正在连接服务…</span><button class="plain-button" id="help-button" type="button">使用说明</button></header>
+    <main id="main">
+      <div id="message" role="alert" hidden></div>
+      <section id="brief-view">
+        <div class="page-heading"><div><h1>把想法交给你的 AI 团队。</h1><p>说清产品和目标，一起把广告做出来。</p></div><button class="button" id="example-button" type="button">填入示例</button></div>
+        <form id="brief-form" class="brief-form">
+          <div id="clarification-note" class="offline-note" hidden></div>
+          <div class="intake-grid">
+            <section class="panel intake-card product-card" aria-labelledby="product-title">
+              <div class="card-heading"><span class="card-number">01</span><h2 id="product-title">介绍你的产品</h2></div>
+              <label>产品名称<input name="product_name" required maxlength="100" placeholder="例如：知行 AI 学习助手" autocomplete="off"></label>
+              <label>产品介绍<textarea name="product_description" required maxlength="3000" rows="4" placeholder="产品有什么功能？有哪些已确认的特点？"></textarea></label>
+            </section>
+            <section class="panel intake-card goal-card" aria-labelledby="goal-title">
+              <div class="card-heading"><span class="card-number">02</span><h2 id="goal-title">确定推广目标</h2></div>
+              <label>想达成什么目标<input name="marketing_goal" required maxlength="500" placeholder="例如：让大学生了解产品并申请试用"></label>
+              <label>面向谁（选填）<textarea name="target_audience" maxlength="1000" rows="3" placeholder="例如：正在准备考试的大学生"></textarea></label>
+            </section>
+            <section class="panel team-intro" aria-labelledby="team-intro-title">
+              <div class="card-heading"><h2 id="team-intro-title">你的协作团队</h2><span class="team-badge">AI 角色</span></div>
+              <ol class="team-roster">
+                <li><span class="person-avatar strategy" aria-hidden="true">信</span><div><strong>李智信</strong><p>需求梳理 · 制定策略</p></div><span class="team-order" aria-label="第一步">01</span></li>
+                <li><span class="person-avatar creative" aria-hidden="true">莉</span><div><strong>李莉</strong><p>创意提案 · 广告文案</p></div><span class="team-order" aria-label="第二步">02</span></li>
+                <li><span class="person-avatar evaluation" aria-hidden="true">纯</span><div><strong>毛小纯</strong><p>独立评审 · 质量把关</p></div><span class="team-order" aria-label="第三步">03</span></li>
+              </ol>
+              <div class="delivery-box"><p>策略、广告文案、AI 宣传图</p><span>生图使用火山引擎，手动触发计费</span></div>
+            </section>
+            <details class="panel more-options">
+              <summary>预算、周期与特殊要求（选填）<span aria-hidden="true">＋</span></summary>
+              <div class="options-content"><div class="form-grid"><label>推广预算（元）<input name="budget_amount" type="number" min="0" max="100000000" step="0.01" placeholder="不预设金额"></label><label>推广周期（天）<input name="duration_days" type="number" min="1" max="365" step="1" placeholder="例如：30"></label></div><label>特殊要求<textarea name="special_requirements" rows="2" maxlength="2000" placeholder="例如：不虚构优惠，不承诺学习效果。"></textarea></label></div>
+            </details>
+            <div class="panel launch-card"><label for="workflow-mode">创作流程<select id="workflow-mode"><option value="direct">直接成稿</option><option value="guided">先选创意方向</option></select></label><label for="quality-mode">评审要求<select id="quality-mode"><option value="balanced">标准评审</option><option value="polish">严格评审</option></select></label><button class="button primary" id="submit-task" type="submit">开始团队协作 <span aria-hidden="true">→</span></button></div>
+          </div>
+        </form>
+      </section>
+      <section id="evaluation-view" hidden aria-label="效果评估总览"></section>
+      <section id="task-view" hidden></section>
+      <section id="revision-panel" class="panel revision-panel" hidden aria-label="给团队发送修改意见">
+        <form id="revision-form"><div class="composer-heading"><strong>你也在团队里</strong><span id="revision-hint">给团队留言，指定修改范围。</span></div><div class="composer-controls"><label class="scope-label">交给谁修改<select id="revision-scope" aria-label="交给谁修改"><option value="creative.items">李莉 · 整份创意，保留策略</option><option value="strategy.positioning">李智信 · 调整策略方向</option></select></label><label class="revision-text-label"><span class="sr-only">修改意见</span><textarea id="revision-message" maxlength="1000" rows="2" placeholder="例如：保留策略，只把标题改得更有校园感。产品事实不能改变。" required></textarea></label><button class="button primary" id="send-revision" type="submit">发送意见</button></div><div class="revision-presets"><button type="button" data-revision-preset="请提出一个与当前表达明显不同的创意方向，不改变产品事实和策略渠道。">换个创意方向</button><button type="button" data-revision-preset="保持产品事实与当前策略，让标题更有具体场景感，减少说明书式表达。">更有场景感</button><button type="button" data-revision-preset="保留核心事实与行动引导，删掉重复说明，把文案写得更短更直接。">简短直接一点</button></div></form>
+      </section>
+    </main>
+  </div>
+  <div id="toast" role="status" aria-live="polite" hidden></div>
+  <dialog id="image-plan-dialog" aria-labelledby="image-plan-title"><form id="image-plan-form"><div class="dialog-heading"><div><h2 id="image-plan-title">先确认海报文案与构图</h2><p id="image-plan-meta"></p></div><button id="image-plan-close" class="icon-button" type="button" aria-label="关闭海报方案">×</button></div><p id="image-plan-warnings"></p><div id="image-plan-error" class="error-box" role="alert" hidden></div><div class="image-plan-fields"><label class="full-field">唯一传播诉求<input name="key_message" maxlength="60" required></label><label>海报标题 · 最多22字<input name="headline" maxlength="22" required></label><label>一行辅助文案 · 选填<input name="supporting_text" maxlength="32"></label><label>行动文案 · 选填<input name="action_text" maxlength="14"></label><label>版式<select name="layout"><option value="top_hero_bottom">上标题 · 中主视觉 · 下辅助信息</option><option value="left_copy_right_hero">左文案 · 右主视觉</option><option value="centered_hero">居中主视觉</option></select></label><label class="full-field">画面类型<select name="visual_mode"><option value="product_still_life">产品静物</option><option value="editorial_scene">单一场景</option><option value="graphic_concept">概念视觉（不虚构产品界面）</option></select></label><label class="full-field">唯一主体与视角<textarea name="hero_description" maxlength="160" rows="3" required></textarea></label></div><p>只排印已确认的短文案，不把正文塞进图里。修改后的海报稿需人工核对，不能视为毛小纯已审核。</p><details class="evidence-disclosure"><summary>查看初始生成规则（提交时按修改重新编译）</summary><pre id="image-plan-prompt"></pre></details><div class="history-dialog-actions"><button id="image-plan-generate" class="button primary" type="submit">确认并生成1张（计费）</button></div></form></dialog>
+  <dialog id="history-dialog" aria-labelledby="history-dialog-title"><h2 id="history-dialog-title">任务历史</h2><div id="history-dialog-body"></div><div class="history-dialog-actions"><button id="history-cancel" class="button" type="button">取消</button><button id="history-confirm" class="button danger" type="button">移入回收站</button></div></dialog>
+  <dialog id="help-dialog" aria-labelledby="help-title"><div class="dialog-heading"><h2 id="help-title">让三个智能体共同完成创作</h2><button id="close-help" class="icon-button" aria-label="关闭说明" type="button">×</button></div><p>默认直接成稿：李智信制定策略，李莉制作广告，毛小纯核对实际内容。也可以先选两个创意方向，再深化文案。必要的行动入口在开始前确认，避免无效调用。协作现场展示公开草稿与交接记录，不展示内部思维链。</p><p>可以指定只改标题、正文或视觉方案。评审未达标时先等你决定，不会自动连跑多轮。每个任务最多三轮，严重风险不会被高分覆盖。缺少事实时在现场补充，创建保留原任务的关联续作。</p><p>创意成品可手动生成AI宣传图，并预览、下载原图。点击生成会调用火山引擎计费，不会自动重试。图片尚未通过图像审核，需人工核对中文和产品外观；无实物参考时仅作创意示意。</p><p>模型参考分不是客观质量测量，也不预测点击率或销量。服务重启保留结果，中断任务由你决定是否继续。不会自动发布广告。</p><a href="/evaluation/demo/">打开独立的离线规则回放</a></dialog>
+  <script type="module" src="/campaign/app.js"></script>
+</body>
+</html>

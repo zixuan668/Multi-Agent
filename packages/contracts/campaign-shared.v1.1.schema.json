@@ -1,0 +1,806 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "智策三智能体公共交接定义 v1.1",
+  "$defs": {
+    "feedback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_agent",
+        "target_path",
+        "issue",
+        "suggestion",
+        "priority"
+      ],
+      "properties": {
+        "target_agent": {
+          "enum": [
+            "strategy",
+            "creative"
+          ]
+        },
+        "target_path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "\\S"
+        },
+        "issue": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 800,
+          "pattern": "\\S"
+        },
+        "suggestion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 800,
+          "pattern": "\\S"
+        },
+        "priority": {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        }
+      }
+    },
+    "feedbackRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_agent",
+        "target_path",
+        "issue",
+        "suggestion",
+        "priority",
+        "feedback_id",
+        "evaluation_id",
+        "resolved"
+      ],
+      "properties": {
+        "target_agent": {
+          "enum": [
+            "strategy",
+            "creative"
+          ]
+        },
+        "target_path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "\\S"
+        },
+        "issue": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 800,
+          "pattern": "\\S"
+        },
+        "suggestion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 800,
+          "pattern": "\\S"
+        },
+        "priority": {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        "feedback_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "\\S"
+        },
+        "evaluation_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "\\S"
+        },
+        "resolved": {
+          "type": "boolean"
+        }
+      }
+    },
+    "dimension": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "score",
+        "reason",
+        "target_path",
+        "evidence"
+      ],
+      "properties": {
+        "score": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 800,
+          "pattern": "\\S"
+        },
+        "target_path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "\\S"
+        },
+        "evidence": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "risk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "category",
+        "severity",
+        "target_path",
+        "evidence",
+        "description"
+      ],
+      "properties": {
+        "category": {
+          "enum": [
+            "fact",
+            "constraint",
+            "compliance",
+            "brand",
+            "audience"
+          ]
+        },
+        "severity": {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        "target_path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "\\S"
+        },
+        "evidence": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "pattern": "\\S"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 800,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "feedbackCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "feedback_id",
+        "resolved",
+        "reason",
+        "target_path",
+        "evidence"
+      ],
+      "properties": {
+        "feedback_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "\\S"
+        },
+        "resolved": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 800,
+          "pattern": "\\S"
+        },
+        "target_path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "\\S"
+        },
+        "evidence": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "creativeData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "strategy_result_id",
+        "concept",
+        "items",
+        "assumptions"
+      ],
+      "properties": {
+        "strategy_result_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "\\S"
+        },
+        "concept": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "idea",
+            "rationale"
+          ],
+          "properties": {
+            "idea": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 800,
+              "pattern": "\\S"
+            },
+            "rationale": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 800,
+              "pattern": "\\S"
+            }
+          }
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "channel",
+              "headline",
+              "body",
+              "call_to_action",
+              "visual_brief",
+              "fact_references",
+              "assets"
+            ],
+            "properties": {
+              "channel": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100,
+                "pattern": "\\S"
+              },
+              "headline": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 60,
+                "pattern": "\\S"
+              },
+              "body": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1000,
+                "pattern": "\\S"
+              },
+              "call_to_action": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120,
+                "pattern": "\\S"
+              },
+              "visual_brief": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "subject",
+                  "composition",
+                  "style",
+                  "aspect_ratio"
+                ],
+                "properties": {
+                  "poster": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["key_message", "headline", "supporting_text", "action_text", "layout", "visual_mode", "hero_description"],
+                    "properties": {
+                      "key_message": {"type": "string", "minLength": 1, "maxLength": 60, "pattern": "\\S"},
+                      "headline": {"type": "string", "minLength": 1, "maxLength": 22, "pattern": "\\S"},
+                      "supporting_text": {"type": ["string", "null"], "minLength": 1, "maxLength": 32, "pattern": "\\S"},
+                      "action_text": {"type": ["string", "null"], "minLength": 1, "maxLength": 14, "pattern": "\\S"},
+                      "layout": {"enum": ["top_hero_bottom", "left_copy_right_hero", "centered_hero"]},
+                      "visual_mode": {"enum": ["product_still_life", "editorial_scene", "graphic_concept"]},
+                      "hero_description": {"type": "string", "minLength": 1, "maxLength": 160, "pattern": "\\S"}
+                    }
+                  },
+                  "subject": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500,
+                    "pattern": "\\S"
+                  },
+                  "composition": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500,
+                    "pattern": "\\S"
+                  },
+                  "style": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500,
+                    "pattern": "\\S"
+                  },
+                  "aspect_ratio": {
+                    "enum": [
+                      "1:1",
+                      "3:4",
+                      "4:5",
+                      "16:9",
+                      "9:16"
+                    ]
+                  }
+                }
+              },
+              "fact_references": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "claim",
+                    "source_quote"
+                  ],
+                  "properties": {
+                    "claim": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 500,
+                      "pattern": "\\S"
+                    },
+                    "source_quote": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 500,
+                      "pattern": "\\S"
+                    }
+                  }
+                },
+                "maxItems": 5,
+                "minItems": 1
+              },
+              "assets": {
+                "type": "array",
+                "maxItems": 0,
+                "description": "当前仅交付视觉制作方案；图片生成未启用，禁止宣称已经生成素材。"
+              }
+            }
+          },
+          "maxItems": 5,
+          "minItems": 1
+        },
+        "assumptions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "pattern": "\\S"
+          },
+          "maxItems": 10,
+          "minItems": 0
+        }
+      }
+    },
+    "evaluationData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "strategy_result_id",
+        "creative_result_id",
+        "dimension_scores",
+        "risks",
+        "feedback",
+        "feedback_checks",
+        "total_score"
+      ],
+      "properties": {
+        "strategy_result_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "\\S"
+        },
+        "creative_result_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "\\S"
+        },
+        "dimension_scores": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "attraction",
+            "audience_fit",
+            "clarity",
+            "channel_fit",
+            "call_to_action"
+          ],
+          "properties": {
+            "attraction": {
+              "$ref": "#/$defs/dimension"
+            },
+            "audience_fit": {
+              "$ref": "#/$defs/dimension"
+            },
+            "clarity": {
+              "$ref": "#/$defs/dimension"
+            },
+            "channel_fit": {
+              "$ref": "#/$defs/dimension"
+            },
+            "call_to_action": {
+              "$ref": "#/$defs/dimension"
+            }
+          }
+        },
+        "risks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/risk"
+          },
+          "maxItems": 100,
+          "minItems": 0
+        },
+        "feedback": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/feedback"
+          },
+          "maxItems": 60,
+          "minItems": 0
+        },
+        "feedback_checks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/feedbackCheck"
+          },
+          "maxItems": 200,
+          "minItems": 0
+        },
+        "total_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "clarifications": {
+          "type": "array",
+          "maxItems": 5,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "question",
+              "reason",
+              "target_path",
+              "evidence"
+            ],
+            "properties": {
+              "question": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 800
+              },
+              "target_path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "evidence": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              }
+            }
+          }
+        }
+      }
+    },
+    "creativeResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "task_id",
+        "agent",
+        "round_no",
+        "attempt_count",
+        "status",
+        "result_id",
+        "version",
+        "data",
+        "error",
+        "created_at"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.1"
+        },
+        "task_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "\\S"
+        },
+        "agent": {
+          "const": "creative"
+        },
+        "round_no": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "attempt_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "status": {
+          "const": "succeeded"
+        },
+        "result_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "\\S"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "data": {
+          "$ref": "#/$defs/creativeData"
+        },
+        "error": {
+          "type": "null"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "evaluationResponse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "task_id",
+        "agent",
+        "round_no",
+        "attempt_count",
+        "status",
+        "result_id",
+        "version",
+        "data",
+        "error",
+        "created_at"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.1"
+        },
+        "task_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "\\S"
+        },
+        "agent": {
+          "const": "evaluation"
+        },
+        "round_no": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "attempt_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "status": {
+          "const": "succeeded"
+        },
+        "result_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "\\S"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "data": {
+          "$ref": "#/$defs/evaluationData"
+        },
+        "error": {
+          "type": "null"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "creativeRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "task_id",
+        "agent",
+        "round_no",
+        "attempt_count",
+        "requirements",
+        "strategy",
+        "creative",
+        "previous_result",
+        "feedback",
+        "config_version"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.1"
+        },
+        "task_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "\\S"
+        },
+        "agent": {
+          "const": "creative"
+        },
+        "round_no": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "attempt_count": {
+          "const": 1
+        },
+        "requirements": {
+          "$ref": "strategy-request.schema.json#/properties/requirements"
+        },
+        "strategy": {
+          "$ref": "strategy-response.schema.json"
+        },
+        "creative": {
+          "type": "null"
+        },
+        "previous_result": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "creative-response.v1.1.schema.json"
+            }
+          ]
+        },
+        "feedback": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/feedbackRecord"
+          },
+          "maxItems": 200,
+          "minItems": 0
+        },
+        "config_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "evaluationRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "task_id",
+        "agent",
+        "round_no",
+        "attempt_count",
+        "requirements",
+        "strategy",
+        "creative",
+        "previous_result",
+        "feedback",
+        "config_version"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.1"
+        },
+        "task_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "\\S"
+        },
+        "agent": {
+          "const": "evaluation"
+        },
+        "round_no": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "attempt_count": {
+          "const": 1
+        },
+        "requirements": {
+          "$ref": "strategy-request.schema.json#/properties/requirements"
+        },
+        "strategy": {
+          "$ref": "strategy-response.schema.json"
+        },
+        "creative": {
+          "$ref": "creative-response.v1.1.schema.json"
+        },
+        "previous_result": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "evaluation-response.v1.1.schema.json"
+            }
+          ]
+        },
+        "feedback": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/feedbackRecord"
+          },
+          "maxItems": 200,
+          "minItems": 0
+        },
+        "config_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "\\S"
+        }
+      }
+    }
+  }
+}

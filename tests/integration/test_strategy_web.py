@@ -73,7 +73,7 @@ class StrategyWebTests(unittest.TestCase):
     def test_homepage_introduces_agent_and_links_to_workspace(self):
         with request.urlopen(self.base_url + "/", timeout=2) as response:
             page = response.read().decode("utf-8")
-        for text in ("智策营销智能体", "有依据的营销策略", "策略取舍", "事实溯源", "创意接续"):
+        for text in ("智策营销智能体", "有依据的营销创意", "策略定位", "创意表达", "独立评审", "反馈修改"):
             self.assertIn(text, page)
         self.assertIn('href="/workspace"', page)
         self.assertIn('id="networkCanvas"', page)

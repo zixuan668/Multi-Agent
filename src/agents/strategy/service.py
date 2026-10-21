@@ -51,11 +51,13 @@ class StrategyAgent:
         prompt_builder: PromptBuilder | None = None,
         retry_policy: RetryPolicy | None = None,
         sleeper: Callable[[float], None] = time.sleep,
+        semantic_review: bool = True,
     ):
         self.model_client = model_client
         self.prompt_builder = prompt_builder or PromptBuilder()
         self.retry_policy = retry_policy or RetryPolicy()
         self.sleeper = sleeper
+        self.semantic_review = semantic_review
         self._versions: dict[str, int] = {}
         self._version_lock = threading.Lock()
         self._task_locks: dict[str, threading.Lock] = {}
@@ -88,6 +90,22 @@ class StrategyAgent:
     def history(self, task_id: str) -> list[dict]:
         with self._version_lock:
             return deepcopy(self._results.get(task_id, []))
+
+    def restore_history(self, task_id: str, requirements: dict, config_version: str, responses: list[dict]) -> None:
+        validated = []
+        last_version = 0
+        for response in responses:
+            value = StrategyResponse.from_dict(response, task_id=task_id).to_dict()
+            if value["status"] != "succeeded" or value["version"] <= last_version:
+                raise ContractValidationError("恢复的策略版本须成功且严格递增")
+            last_version = value["version"]
+            validated.append(value)
+        with self._version_lock:
+            if task_id in self._inputs:
+                raise ContractValidationError("不能覆盖已运行任务的策略历史")
+            self._inputs[task_id] = {"requirements": deepcopy(requirements), "config_version": config_version}
+            self._results[task_id] = validated
+            self._versions[task_id] = last_version
 
     def traces(self, task_id: str) -> list[dict]:
         with self._version_lock:
@@ -126,12 +144,12 @@ class StrategyAgent:
                 trace["candidate_output"] = json.dumps(data.to_dict(), ensure_ascii=False)
                 business_issues = validate_business_rules(data, request)
                 findings = [{"field": "business_rules", "message": issue, "category": "constraint", "severity": "blocking"} for issue in business_issues]
-                if not getattr(self.model_client, "refine_strategy", None):
+                if not self.semantic_review or not getattr(self.model_client, "refine_strategy", None):
                     findings.extend(validate_strategy_quality(data, request))
                 if findings:
                     raise ModelOutputError("策略存在事实、约束或明确的可执行性缺口", issues=findings)
-                refine = getattr(self.model_client, "refine_strategy", None)
-                review = getattr(self.model_client, "review_strategy", None)
+                refine = getattr(self.model_client, "refine_strategy", None) if self.semantic_review else None
+                review = getattr(self.model_client, "review_strategy", None) if self.semantic_review else None
                 if refine:
                     if not active.is_set():
                         raise ModelTimeoutError("本次尝试已超时，不再发起策略编辑")
@@ -178,7 +196,7 @@ class StrategyAgent:
         threading.Thread(target=run, daemon=True).start()
         try:
             base_timeout = getattr(self.model_client, "timeout_seconds", 60.0)
-            attempt_timeout = min(base_timeout * 2, 120.0) if getattr(self.model_client, "refine_strategy", None) else base_timeout
+            attempt_timeout = min(base_timeout * 2, 120.0) if self.semantic_review and getattr(self.model_client, "refine_strategy", None) else base_timeout
             data, trace, error = output.get(timeout=attempt_timeout)
         except queue.Empty:
             raise ModelTimeoutError("策略生成与内容复核达到本次调用超时，请稍后重试") from None

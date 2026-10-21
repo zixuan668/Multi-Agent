@@ -1,0 +1,30 @@
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const {pathToFileURL} = require('node:url');
+
+(async () => {
+  const presentation = await import(pathToFileURL(path.resolve('web/campaign/presentation.js')));
+  assert.equal(presentation.escapeHtml('<script>"&\''), '&lt;script&gt;&quot;&amp;&#39;');
+  const first = {round_no:1,strategy:{result_id:'strategy-1'},creative:{data:{items:[{headline:'标题',body:'正文',call_to_action:'查看介绍'}]}}};
+  const second = {round_no:2,strategy:{result_id:'strategy-1'},creative:{result_id:'creative-2'},evaluation:{result_id:'evaluation-2'}};
+  const task = {rounds:[first,second],selected_round:1,status:'awaiting_confirmation',stage:'awaiting_confirmation',feedback:[{status:'open'},{status:'resolved'}]};
+  assert.equal(presentation.selectedRound(task),first);
+  assert.equal(presentation.selectedRound(task,2),second);
+  assert.equal(presentation.selectedRound({...task,rounds:[]}),null);
+  assert.equal(presentation.openFeedback(task).length,1);
+  assert.equal(presentation.creativeText(first.creative,0),'标题\n\n正文\n\n查看介绍');
+  assert.ok(presentation.stageStates(task).every(step=>step.done));
+  const active = {rounds:[{round_no:1,strategy:{}}],status:'running',stage:'creative'};
+  assert.equal(presentation.stageStates(active)[1].current,true);
+  assert.equal(presentation.stageStates(active)[2].done,false);
+  const resumable = {status:'interrupted',config_version:'config-1',usage:{model_calls:4,active_seconds:100},config_snapshot:{max_model_calls:16,max_seconds:360}};
+  assert.equal(presentation.canResume(resumable,'config-1'),true);
+  assert.equal(presentation.canResume(resumable,'config-2'),false);
+  assert.equal(presentation.canResume({...resumable,usage:{model_calls:16,active_seconds:100}},'config-1'),false);
+  assert.equal(presentation.canResume({...resumable,usage:{model_calls:4,active_seconds:360}},'config-1'),false);
+  assert.equal(presentation.canResume({...resumable,status:'approved'},'config-1'),false);
+  assert.equal(presentation.roundLabel({status:'failed',selected_round:1},first),'第 1 轮 · 保留版本 · 未完成');
+  assert.equal(presentation.roundLabel({status:'running'},first),'第 1 轮 · 生成中');
+  assert.equal(presentation.roundLabel({status:'awaiting_confirmation',selected_round:2},second),'第 2 轮 · 选中版本');
+  console.log('Campaign frontend: safe text, selected version, stage progress and copy payload passed.');
+})().catch(error=>{console.error(error);process.exitCode=1;});

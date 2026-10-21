@@ -7,6 +7,7 @@ import os
 import re
 import socket
 import math
+import time
 from pathlib import Path
 from urllib.parse import urlparse
 from typing import Any, Protocol
@@ -38,7 +39,7 @@ def load_model_env(path: Path | None = None) -> None:
     path = path or Path(__file__).resolve().parents[3] / ".env"
     if not path.exists():
         return
-    allowed = {"MODEL_BASE_URL", "MODEL_API_KEY", "MODEL_NAME", "MODEL_TIMEOUT_SECONDS", "MODEL_TEMPERATURE"}
+    allowed = {"MODEL_BASE_URL", "MODEL_API_KEY", "MODEL_NAME", "MODEL_TIMEOUT_SECONDS", "MODEL_TEMPERATURE", "MODEL_REASONING_EFFORT", "MODEL_STREAMING"}
     for index, raw in enumerate(path.read_text(encoding="utf-8-sig").splitlines(), 1):
         line = raw.strip()
         if not line or line.startswith("#"):
@@ -179,6 +180,8 @@ class RuleBasedModelClient:
 class CompatibleModelClient:
     """调用通用 chat/completions HTTPS 接口的模型适配器。"""
 
+    EDITOR_VERSION = "optional-facts-and-execution-v1.1"
+
     def __init__(
         self,
         *,
@@ -187,9 +190,13 @@ class CompatibleModelClient:
         model: str,
         timeout_seconds: float = 60.0,
         temperature: float = 0.2,
+        reasoning_effort: str | None = None,
+        streaming_enabled: bool = True,
     ):
         if not base_url or not api_key or not model:
             raise ConfigurationError("真实模型配置缺失：请设置 MODEL_BASE_URL、MODEL_API_KEY、MODEL_NAME；离线演示须显式选择 offline")
+        if type(streaming_enabled) is not bool:
+            raise ConfigurationError("MODEL_STREAMING 只能为 true 或 false")
         parsed = urlparse(base_url)
         if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment:
             raise ConfigurationError("MODEL_BASE_URL 必须是无凭据、查询参数和片段的 HTTPS 地址")
@@ -197,6 +204,9 @@ class CompatibleModelClient:
             raise ConfigurationError("MODEL_TIMEOUT_SECONDS 必须为 10 至 120 秒")
         if type(temperature) not in (int, float) or not math.isfinite(temperature) or not 0 <= temperature <= 2:
             raise ConfigurationError("MODEL_TEMPERATURE 必须为 0 至 2 的有限数值")
+        supports_effort = parsed.hostname == "api.deepseek.com" and model in {"deepseek-flash", "deepseek-v4-pro"}
+        if reasoning_effort is not None and (reasoning_effort not in {"low", "high", "max"} or not supports_effort):
+            raise ConfigurationError("MODEL_REASONING_EFFORT 仅支持官方DeepSeek当前模型的low/high/max")
         if "your-model-service.example" in base_url or api_key == "replace-with-your-key" or model == "your-model-name":
             raise ConfigurationError("请将示例配置替换为真实模型服务配置")
         endpoint = base_url.rstrip("/")
@@ -207,6 +217,8 @@ class CompatibleModelClient:
         self.model = model
         self.timeout_seconds = timeout_seconds
         self.temperature = temperature
+        self.reasoning_effort = (reasoning_effort or "low") if supports_effort else None
+        self.streaming_enabled = streaming_enabled
 
     @classmethod
     def from_env(cls) -> "CompatibleModelClient":
@@ -222,6 +234,8 @@ class CompatibleModelClient:
             model=os.environ.get("MODEL_NAME", ""),
             timeout_seconds=timeout,
             temperature=temperature,
+            reasoning_effort=os.environ.get("MODEL_REASONING_EFFORT") or None,
+            streaming_enabled={"true":True,"false":False}.get(os.environ.get("MODEL_STREAMING","true").lower(),None),
         )
 
     def generate_json(self, prompt: ModelPrompt) -> str:
@@ -229,6 +243,16 @@ class CompatibleModelClient:
             {"role": "system", "content": prompt.system},
             {"role": "user", "content": prompt.user},
         ])
+
+    def complete_json(self, system: str, user: str) -> dict:
+        raw = self._complete([{"role": "system", "content": system}, {"role": "user", "content": user}])
+        try:
+            value = json.loads(raw)
+        except (ValueError, TypeError):
+            raise ModelOutputError("模型必须返回合法JSON对象") from None
+        if not isinstance(value, dict):
+            raise ModelOutputError("模型必须返回JSON对象")
+        return value
 
     def refine_strategy(self, requirements: dict, data: dict) -> tuple[dict, list[dict], str]:
         """第二阶段策略编辑：在同一契约内提升洞察、取舍和创意接续性。"""
@@ -244,6 +268,12 @@ class CompatibleModelClient:
                 "必须保持输入JSON的字段结构，不得增加字段。产品事实只能来自requirements；source_quote必须逐字存在于产品名称或产品介绍中。"
                 "不得编造价格、优惠、认证、销量、平台流量、调研结论或效果。推断保留‘待验证假设：’前缀。"
                 "有预算时渠道金额合计等于总预算并说明用途；无预算时金额为null。遵守周期、禁用内容及必选/禁用渠道。"
+                "每条渠道content_direction必须保留具体制作或发布动作，以及执行前核实事项；不能在编辑时删掉这些必要交付。"
+                "推广方式也必须保留实际执行动作和核实事项。未提供预算、周期、账号权限或素材，"
+                "应在missing_information记录，不编造金额、日期、账号或界面；可以给出不预设日期的执行顺序，"
+                "并使用纯文字或信息图方案，不必等外部素材才能形成策略。"
+                "尚待确认的执行前提、未提供的可选信息与已明确说明不使用的资源，不能归为fact或constraint阻断。"
+                "只有最终策略实际声称了无依据事实，或违反用户明确约束时才归为fact或constraint；完善建议归quality。"
                 "issues只记录最终data中仍无法自动解决的事实或硬约束问题，以及少量确实需要人工决定的质量问题；"
                 "不要把你已经修好的问题写入issues。每条evidence必须逐字出现在最终data中。"
                 "只输出JSON：{\"data\":<重写后的完整策略data>,\"issues\":[{\"field\":\"字段路径\","
@@ -321,12 +351,21 @@ class CompatibleModelClient:
         return issues
 
     def _complete(self, messages: list[dict]) -> str:
+        guard = getattr(self, "request_guard", None)
+        call_timeout = self.timeout_seconds
+        if guard:
+            call_timeout = min(call_timeout, guard())
         payload = {
             "model": self.model,
             "messages": messages,
             "temperature": self.temperature,
             "response_format": {"type": "json_object"},
         }
+        if self.reasoning_effort is not None:
+            payload.update(thinking={"type": "enabled"}, reasoning_effort=self.reasoning_effort, max_tokens=8192)
+        streaming = self.streaming_enabled and callable(getattr(self, "public_output_observer", None))
+        if streaming:
+            payload.update(stream=True, stream_options={"include_usage": True})
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         http_request = request.Request(
             self.endpoint,
@@ -338,11 +377,14 @@ class CompatibleModelClient:
             },
         )
         try:
-            with request.build_opener(NoModelRedirect()).open(http_request, timeout=self.timeout_seconds) as response:
-                body = response.read(1_000_001)
-                if len(body) > 1_000_000:
-                    raise ModelOutputError("模型服务响应超过安全大小限制")
-                result = json.loads(body.decode("utf-8"))
+            with request.build_opener(NoModelRedirect()).open(http_request, timeout=call_timeout) as response:
+                if streaming and "text/event-stream" in response.headers.get("Content-Type", ""):
+                    result = self._read_stream(response, call_timeout)
+                else:
+                    body = response.read(1_000_001)
+                    if len(body) > 1_000_000:
+                        raise ModelOutputError("模型服务响应超过安全大小限制")
+                    result = json.loads(body.decode("utf-8"))
         except error.HTTPError as exc:
             if exc.code in (401, 403):
                 raise ModelAuthError("模型服务鉴权失败，请检查密钥或模型权限") from None
@@ -358,7 +400,12 @@ class CompatibleModelClient:
         except (json.JSONDecodeError, UnicodeDecodeError, KeyError, TypeError):
             raise ModelOutputError("模型服务响应格式异常") from None
 
+        observer = getattr(self, "usage_observer", None)
+        if observer:
+            observer(result.get("usage", {}) if isinstance(result, dict) else {})
         try:
+            if result["choices"][0].get("finish_reason") == "length":
+                raise ModelOutputError("模型达到输出上限，未生成完整结果")
             content = result["choices"][0]["message"]["content"]
         except (KeyError, IndexError, TypeError):
             raise ModelOutputError("模型服务响应缺少 choices[0].message.content") from None
@@ -371,3 +418,47 @@ class CompatibleModelClient:
         if self.api_key in content:
             raise ModelOutputError("模型响应含敏感配置，已拦截；请检查服务后重试")
         return content
+
+    def _read_stream(self, response, timeout):
+        started = time.monotonic()
+        content, usage, finish_reason, size = "", {}, None, 0
+        finished = False
+        for line in response:
+            check = getattr(self, "cancellation_check", None)
+            if check:
+                check()
+            if time.monotonic() - started > timeout:
+                raise ModelTimeoutError("模型流式响应达到本次超时")
+            size += len(line)
+            if size > 8_000_000:
+                raise ModelOutputError("模型流式响应超过安全大小限制")
+            if not line.startswith(b"data:"):
+                continue
+            raw = line[5:].strip()
+            if raw == b"[DONE]":
+                finished = True
+                break
+            chunk = json.loads(raw.decode("utf-8"))
+            if not isinstance(chunk, dict) or chunk.get("error"):
+                raise ModelOutputError("模型流式响应异常")
+            if isinstance(chunk.get("usage"), dict):
+                usage = chunk["usage"]
+            choices = chunk.get("choices", [])
+            if not choices:
+                continue
+            choice = choices[0]
+            finish_reason = choice.get("finish_reason") or finish_reason
+            delta = choice.get("delta", {}).get("content")
+            if isinstance(delta, str):
+                content += delta
+                if len(content) > 250_000:
+                    raise ModelOutputError("模型公开输出超过安全大小限制")
+                if self.api_key in content:
+                    raise ModelOutputError("模型响应含敏感配置，已拦截")
+                self.public_output_observer(content)
+        observer = getattr(self, "usage_observer", None)
+        if not finished:
+            if observer:
+                observer(usage)
+            raise ModelOutputError("模型流式连接中断，草稿尚未交付")
+        return {"choices": [{"message": {"content": content}, "finish_reason": finish_reason}], "usage": usage}

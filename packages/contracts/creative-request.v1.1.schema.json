@@ -1,0 +1,5 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "智策creative交接请求 v1.1",
+  "$ref": "campaign-shared.v1.1.schema.json#/$defs/creativeRequest"
+}
