@@ -69,7 +69,7 @@ class TaskStore:
                 task["results"] = self.agent.history(task_id)
                 task["error"] = result["error"]
                 traces = self.agent.traces(task_id)
-                task["attempt_diagnostics"] = [{k: record.get(k) for k in ("attempt_count", "duration_ms", "error_code", "issues")} for record in traces]
+                task["attempt_diagnostics"] = [{k: record.get(k) for k in ("attempt_count", "duration_ms", "error_code", "issues", "syntax_repairs", "review_syntax_repairs")} for record in traces]
                 task["review_notes"] = traces[-1].get("review_notes", []) if traces and result["status"] == "succeeded" else []
                 task["status"] = "completed" if result["status"] == "succeeded" else "failed"
                 task["termination_reason"] = "strategy_completed" if result["status"] == "succeeded" else "technical_error"

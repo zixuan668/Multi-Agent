@@ -149,3 +149,5 @@ Get-ChildItem tests/frontend/test_*.cjs | ForEach-Object {
 - [实时协作与人工修改](docs/interactive-collaboration.md)
 - [01 策略模块](docs/01-strategy-agent.md) · [02 创意模块](docs/02-creative-agent.md) · [03 评估模块](docs/03-evaluation-agent.md)
 - [离线评估演示说明](docs/evaluation-workbench.md)
+- [策略人工复核模板](docs/strategy-human-review.md)
+- [首轮创意交接指南与联调样例](docs/02-creative-handoff-guide.md)：保留v1.0策略交接参考，统一三智能体流程使用v1.1契约。

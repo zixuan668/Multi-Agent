@@ -27,10 +27,20 @@ from .models import StrategyData, StrategyRequest, StrategyResponse
 from .prompts import PromptBuilder
 from .validation import validate_business_rules, validate_strategy_quality
 from .repair import discard_unknown_output_fields, mark_planning_inferences, repair_only_reported_fields
+from .output_parser import parse_model_object
 
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
+
+
+def _business_findings(issues):
+    findings=[]
+    for issue in issues:
+        prefix=issue.split(' ',1)[0]
+        field=prefix if re.fullmatch(r'(?:selling_points|channels|target_audience|marketing_strategy|missing_information|constraint_conflicts)(?:\[\d+\]|\.[a-z_]+)*',prefix) else 'business_rules'
+        findings.append({'field':field,'message':issue,'category':'constraint','severity':'blocking'})
+    return findings
 
 
 @dataclass(frozen=True)
@@ -124,11 +134,13 @@ class StrategyAgent:
         def run():
             trace = {"raw_output": None, "review_output": None}
             try:
+                generate_started = time.monotonic()
                 trace["raw_output"] = self.model_client.generate_json(prompt)
+                trace["generation_duration_ms"] = round((time.monotonic() - generate_started) * 1000)
                 if not active.is_set():
                     raise ModelTimeoutError("本次尝试已超时，不再发起内容复核")
                 stage("validating")
-                candidate = self._parse_json_object(trace["raw_output"])
+                candidate, trace["syntax_repairs"] = parse_model_object(trace["raw_output"])
                 candidate, discarded = discard_unknown_output_fields(candidate)
                 if discarded:
                     trace["discarded_fields"] = discarded
@@ -143,35 +155,45 @@ class StrategyAgent:
                 data = StrategyData.from_dict(mark_planning_inferences(data.to_dict()))
                 trace["candidate_output"] = json.dumps(data.to_dict(), ensure_ascii=False)
                 business_issues = validate_business_rules(data, request)
-                findings = [{"field": "business_rules", "message": issue, "category": "constraint", "severity": "blocking"} for issue in business_issues]
-                if not self.semantic_review or not getattr(self.model_client, "refine_strategy", None):
-                    findings.extend(validate_strategy_quality(data, request))
+                findings = _business_findings(business_issues)
+                quality_findings = validate_strategy_quality(data, request)
+                trace["review_notes"] = [item for item in quality_findings if item["severity"] == "advisory"]
+                findings.extend(item for item in quality_findings if item["severity"] == "blocking")
                 if findings:
                     raise ModelOutputError("策略存在事实、约束或明确的可执行性缺口", issues=findings)
                 refine = getattr(self.model_client, "refine_strategy", None) if self.semantic_review else None
                 review = getattr(self.model_client, "review_strategy", None) if self.semantic_review else None
-                if refine:
+                assess = getattr(self.model_client, "assess_strategy", None) if self.semantic_review else None
+                if assess:
+                    if not active.is_set():
+                        raise ModelTimeoutError("本次尝试已超时，不再发起策略审查")
+                    stage("reviewing")
+                    review_started = time.monotonic()
+                    issues, trace["review_output"] = assess(request.requirements.to_dict(), data.to_dict())
+                    trace["review_duration_ms"] = round((time.monotonic() - review_started) * 1000)
+                    trace["review_notes"].extend(item for item in issues if item["severity"] == "advisory")
+                    blocking = [item for item in issues if item["severity"] == "blocking"]
+                    if blocking:
+                        raise ModelOutputError("策略尚有阻碍执行的质量或事实问题", issues=blocking)
+                elif refine:
                     if not active.is_set():
                         raise ModelTimeoutError("本次尝试已超时，不再发起策略编辑")
                     stage("reviewing")
                     trace["draft_output"] = trace["candidate_output"]
                     refined, issues, trace["review_output"] = refine(request.requirements.to_dict(), data.to_dict())
+                    _, trace["review_syntax_repairs"] = parse_model_object(trace["review_output"])
+                    if previous_raw and repair_issues:
+                        refined = repair_only_reported_fields(self._parse_json_object(previous_raw), refined, repair_issues)
                     refined, discarded = discard_unknown_output_fields(refined)
                     if discarded:
                         trace["discarded_refined_fields"] = discarded
                     data = StrategyData.from_dict(mark_planning_inferences(refined))
                     trace["candidate_output"] = json.dumps(data.to_dict(), ensure_ascii=False)
                     business_issues = validate_business_rules(data, request)
-                    findings = [{"field": "business_rules", "message": issue, "category": "constraint", "severity": "blocking"} for issue in business_issues]
+                    findings = _business_findings(business_issues)
                     findings.extend(validate_strategy_quality(data, request))
                     for item in issues:
-                        field = item.get("field", "")
-                        evidence = item.get("evidence", "")
-                        # 已记录的信息缺口和明确的执行前核实，不是策略违规。
-                        if field.startswith(("missing_information", "assumptions")) or (
-                            field.startswith("channels[") and ".content_direction" in field and re.search(r"核实|确认", evidence)
-                        ):
-                            item = {**item, "category": "quality", "severity": "advisory"}
+                        # 不按字段名或“核实”字样把事实问题降为建议。
                         findings.append(item)
                     trace["review_notes"] = [item for item in findings if item.get("category") == "quality" and item.get("severity") == "advisory"]
                     blocking = [item for item in findings if item not in trace["review_notes"]]
@@ -184,19 +206,22 @@ class StrategyAgent:
                     issues, trace["review_output"] = review(request.requirements.to_dict(), data.to_dict())
                     # 旧式测试/自定义客户端的字符串意见保守视为阻断。
                     findings = [{"field": "content_review", "message": i, "category": "fact", "severity": "blocking"} if isinstance(i, str) else i for i in issues]
-                    trace["review_notes"] = [i for i in findings if i.get("category") == "quality" and i.get("severity") == "advisory"]
+                    trace["review_notes"] = trace.get("review_notes", []) + [i for i in findings if i.get("category") == "quality" and i.get("severity") == "advisory"]
                     blocking = [i for i in findings if i not in trace["review_notes"]]
                     if blocking:
                         raise ModelOutputError("内容复核发现事实或约束问题", issues=blocking)
                 output.put((data, trace, None))
             except Exception as exc:
+                if getattr(exc, "raw_review", None):
+                    trace["review_output"] = exc.raw_review
                 output.put((None, trace, exc))
             finally:
                 self._model_slots.release()
         threading.Thread(target=run, daemon=True).start()
         try:
             base_timeout = getattr(self.model_client, "timeout_seconds", 60.0)
-            attempt_timeout = min(base_timeout * 2, 120.0) if self.semantic_review and getattr(self.model_client, "refine_strategy", None) else base_timeout
+            uses_review = self.semantic_review and any(getattr(self.model_client, name, None) for name in ("assess_strategy", "refine_strategy", "review_strategy"))
+            attempt_timeout = min(base_timeout * 2, 120.0) if uses_review else base_timeout
             data, trace, error = output.get(timeout=attempt_timeout)
         except queue.Empty:
             raise ModelTimeoutError("策略生成与内容复核达到本次调用超时，请稍后重试") from None
@@ -295,14 +320,7 @@ class StrategyAgent:
 
     @staticmethod
     def _parse_json_object(raw: str) -> dict:
-        text = raw.strip()
-        try:
-            value = json.loads(text)
-        except json.JSONDecodeError:
-            raise ModelOutputError("模型必须只输出 JSON 对象，不接受说明文本或代码围栏") from None
-        if not isinstance(value, dict):
-            raise ModelOutputError("模型输出顶层必须是 JSON 对象")
-        return value
+        return parse_model_object(raw)[0]
 
     def _next_version(self, request: StrategyRequest) -> int:
         with self._version_lock:
@@ -371,7 +389,7 @@ class StrategyAgent:
     @staticmethod
     def _user_message(error: StrategyAgentError) -> str:
         if error.code == "OUTPUT_INVALID":
-            return "模型结果仍有事实或格式问题，自动修复未成功。本次没有生成有效策略，请查看问题详情。"
+            return "策略仍有事实、执行质量或格式问题，自动修复未成功。本次未交付策略；需求已保留，可查看具体问题后重试。"
         return str(error) or "策略生成失败，请根据错误码检查配置后重试"
 
     @staticmethod

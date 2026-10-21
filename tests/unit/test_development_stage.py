@@ -170,7 +170,7 @@ class VersionAndReviewTests(unittest.TestCase):
         with self.assertRaises(ContractValidationError):
             validate_creative_request(payload)
 
-    def test_downstream_rejects_strategy_without_creative_handoff_detail(self):
+    def test_downstream_rejects_placeholder_strategy_even_if_status_succeeded(self):
         req = StrategyRequest.from_dict(valid_payload())
         result = StrategyAgent(ScriptedClient([json.dumps(valid_data())])).generate(req).to_dict()
         payload = build_creative_request(req, result)

@@ -32,7 +32,7 @@ class StrategyWebTests(unittest.TestCase):
         self.assertEqual(value["agent"], "strategy")
 
     def test_updated_assets_not_stale_cached(self):
-        for path in ("/", "/styles.css?v=20261003-review3", "/app.js?v=20261003-review3"):
+        for path in ("/", "/workspace", "/styles.css?v=20261012-decision2", "/brief.js?v=20261012-decision2", "/app.js?v=20261012-decision2", "/examples.js", "/presentation.js"):
             with request.urlopen(self.base_url + path, timeout=2) as response:
                 self.assertEqual(response.status, 200)
                 self.assertEqual(response.headers["Cache-Control"], "no-store")
@@ -59,16 +59,26 @@ class StrategyWebTests(unittest.TestCase):
             "startDate",
             "endDate",
             "wizardProgress",
-            "completionBar",
             "recentTasks",
             "budgetSummary",
         ):
             self.assertIn(f'id="{element_id}"', page)
+        with request.urlopen(self.base_url + "/examples.js", timeout=2) as response:
+            examples = response.read().decode("utf-8")
         for template_name in ("AI 学习产品", "奶茶门店", "智能手表", "护肤产品", "旅游产品"):
-            self.assertIn(template_name, script)
+            self.assertIn(template_name, examples)
+        self.assertIn("StrategyExamples.templates", script)
         self.assertIn("formattedStrategy", script)
         self.assertIn("locateSource", script)
         self.assertIn("strategyResultArchive.v1", script)
+        self.assertNotIn('id="workspaceDescription"', page)
+        self.assertNotIn('class="field-help"', page)
+
+    def test_workspace_serves_local_fonts(self):
+        for face in ("regular", "bold"):
+            with request.urlopen(self.base_url + f"/fonts/tex-gyre-heros/texgyreheros-{face}.otf", timeout=2) as response:
+                self.assertEqual(response.status, 200)
+                self.assertEqual(response.read(4), b"OTTO")
 
     def test_homepage_introduces_agent_and_links_to_workspace(self):
         with request.urlopen(self.base_url + "/", timeout=2) as response:

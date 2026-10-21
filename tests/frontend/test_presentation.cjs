@@ -1,0 +1,31 @@
+const assert = require('node:assert/strict');
+const presentation = require('../../web/presentation.js');
+const brief = require('../../web/brief.js');
+const {templates} = require('../../web/examples.js');
+const labels = ['内容','发布','行动','前提','预算用途'];
+const original = '内容：无糖/半糖选择图；发布：店主在群中发布；行动：到店点单；前提：确认图片可用；预算用途：仅用已有素材';
+const parts = presentation.sections(original,labels);
+assert.deepEqual(parts.map(v=>v.label),labels);
+assert.equal(parts[2].text,'到店点单');
+const old = '店主每周做一次糖度说明；不投放广告。';
+assert.deepEqual(presentation.sections(old,labels),[{label:'',text:old}],'old prose is not discarded');
+assert.equal(presentation.clean('待验证假设：用户关注糖度'),'用户关注糖度');
+assert.match(presentation.budget({allocated_amount:null},0,'CNY'),/零预算/);
+assert.doesNotMatch(presentation.budget({allocated_amount:null},0,'CNY'),/待确认|待明确/);
+assert.match(presentation.budget({allocated_amount:null},500,'CNY'),/尚未估算/);
+assert.match(presentation.budget({allocated_amount:200},500,'CNY'),/建议上限 200 CNY/);
+for(const template of templates) {
+  const values = {...brief.defaults,...template.values};
+  assert.ok(brief.requirements(values).every(v=>v.complete),template.id+' required intake');
+  assert.notEqual(values.productFeatures,values.productDescription,'evidence is not copied description');
+  assert.equal(values.channelsState,'known');
+  assert.equal(values.materialsState,'known');
+  assert.equal(values.teamState,'known');
+  assert.notEqual(values.marketingProblem,'暂未确定');
+  const payload = brief.payload(values);
+  assert.equal(payload.campaign_period.duration_days,Number(values.durationDays));
+  assert.ok(payload.product_description.length <= 5000);
+  assert.ok(payload.marketing_goal.length <= 2000);
+  assert.ok(payload.special_requirements.length <= 2000);
+}
+console.log('Presentation: structured sections, legacy prose, zero/unknown budget and all five actual example briefs passed.');
